@@ -13,7 +13,7 @@ class CoverInline(admin.TabularInline):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'price', 'delivery')
+    list_display = ('__str__', 'category', 'price', 'delivery')
     search_fields = ('description',)
     inlines = (CoverInline,)
 
