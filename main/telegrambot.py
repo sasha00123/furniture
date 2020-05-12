@@ -5,7 +5,7 @@ from typing import Optional
 from django.conf import settings
 from django.template import Template, Context
 from django_telegrambot.apps import DjangoTelegramBot
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
 
 from main.models import Item, TelegramUser, Category, Message
@@ -44,6 +44,14 @@ def show_submenu(update: Update, context: CallbackContext, category: Category):
 
 
 def show_item(update: Update, context: CallbackContext, item: Item):
+    if settings.DEBUG:
+        for chunk in chunks(item.covers.all(), 10):
+            update.effective_message.reply_media_group([InputMediaPhoto(cover.file.file) for cover in chunk])
+    else:
+        for chunk in chunks(item.covers.all(), 10):
+            update.effective_message.reply_media_group(
+                [InputMediaPhoto(settings.WEBSITE_LINK + cover.file.url) for cover in chunk])
+
     controls = [
         InlineKeyboardButton('Все категории', callback_data='menu')
     ]
@@ -65,8 +73,9 @@ def show_item(update: Update, context: CallbackContext, item: Item):
                                      callback_data=f'items,{item.category_id},end'),
             ]
         ] + [controls])
-    update.effective_message.reply_photo(item.cover.file, caption=render(Message.get('item'), {'item': item}),
-                                         reply_markup=keyboard)
+
+    update.effective_message.reply_text(render(Message.get('item'), {'item': item}),
+                                        reply_markup=keyboard)
 
 
 def process_callback(update: Update, context: CallbackContext):

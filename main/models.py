@@ -32,7 +32,6 @@ class Category(models.Model):
 
 
 class Item(models.Model):
-    cover = models.ImageField(upload_to='covers/', verbose_name='Обложка')
     description = models.CharField(max_length=255, blank=True, default="", verbose_name='Описание')
     price = models.PositiveIntegerField(blank=True, default=0, verbose_name='Цена')
     delivery = models.BooleanField(default=False, verbose_name='Доставка')
@@ -75,3 +74,8 @@ class Message(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Cover(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='covers')
+    file = models.ImageField(upload_to='covers/', verbose_name='Обложка')
