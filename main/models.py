@@ -28,7 +28,7 @@ class Category(models.Model):
     is_super.short_description = "Имеет подкатегории?"
 
     def get_callback_data(self):
-        return f"items,{self.id},begin" if not self.is_super() else f"submenu,{self.id}"
+        return f"items,{self.id},list" if not self.is_super() else f"submenu,{self.id}"
 
 
 class Item(models.Model):

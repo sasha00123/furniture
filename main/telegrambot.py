@@ -33,12 +33,25 @@ def show_menu(update: Update, context: CallbackContext):
 def show_submenu(update: Update, context: CallbackContext, category: Category):
     controls = [InlineKeyboardButton('Все категории', callback_data='menu')]
     if category.parent is not None:
-        controls = [InlineKeyboardButton('Меню', callback_data=category.parent.get_callback_data())]
+        controls = [InlineKeyboardButton('Назад', callback_data=category.parent.get_callback_data())]
     keyboard = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton(category.name, callback_data=category.get_callback_data()) for category in chunk]
             for chunk in chunks(category.subcategories.all(), 2)
         ] + [controls])
+    update.effective_message.reply_text(render(Message.get('submenu'), {'category': category}),
+                                        reply_markup=keyboard)
+
+
+def show_category_list(update: Update, context: CallbackContext, category: Category):
+    controls = [InlineKeyboardButton('Все категории', callback_data='menu')]
+    if category.parent is not None:
+        controls = [InlineKeyboardButton('Назад', callback_data=category.parent.get_callback_data())]
+    keyboard = InlineKeyboardMarkup(
+        [[InlineKeyboardButton(f'Модель {i}', callback_data=f"items,{item.category_id},get,{item.pk}")
+          for i, item in chunk]
+         for chunk in chunks(list(enumerate(category.items.all(), 1)), 2)]
+        + [controls])
     update.effective_message.reply_text(render(Message.get('submenu'), {'category': category}),
                                         reply_markup=keyboard)
 
@@ -67,10 +80,8 @@ def show_item(update: Update, context: CallbackContext, item: Item):
                                      callback_data=f'items,{item.category_id},next,{item.pk}')
             ],
             [
-                InlineKeyboardButton('В начало',
-                                     callback_data=f'items,{item.category_id},begin'),
-                InlineKeyboardButton('В конец',
-                                     callback_data=f'items,{item.category_id},end'),
+                InlineKeyboardButton('Назад',
+                                     callback_data=item.category.get_callback_data()),
             ]
         ] + [controls])
 
@@ -86,18 +97,19 @@ def process_callback(update: Update, context: CallbackContext):
         category_id, action, *args = args
         category = Category.objects.get(pk=category_id)
 
-        item = None
-        if action == 'begin':
-            item = category.items.first()
-        elif action == 'end':
-            item = category.items.last()
-        elif action == 'next':
-            item = category.items.filter(pk__gt=int(args[0])).first()
-        elif action == 'prev':
-            item = category.items.filter(pk__lt=int(args[0])).last()
+        if action == 'list':
+            show_category_list(update, context, category)
+        else:
+            item = None
+            if action == 'get':
+                item = category.items.get(pk=args[0])
+            elif action == 'next':
+                item = category.items.filter(pk__gt=int(args[0])).first()
+            elif action == 'prev':
+                item = category.items.filter(pk__lt=int(args[0])).last()
 
-        if item is not None:
-            show_item(update, context, item)
+            if item is not None:
+                show_item(update, context, item)
     elif query == 'submenu':
         category_id = args[0]
         category = Category.objects.get(pk=category_id)
