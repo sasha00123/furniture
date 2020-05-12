@@ -3,6 +3,7 @@ from django.db import models
 
 class Category(models.Model):
     name = models.CharField(max_length=255)
+    has_models = models.BooleanField(verbose_name="Разбиение на модели?")
 
     parent = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='subcategories',
                                verbose_name='Основная категория', blank=True, null=True)
@@ -28,7 +29,11 @@ class Category(models.Model):
     is_super.short_description = "Имеет подкатегории?"
 
     def get_callback_data(self):
-        return f"items,{self.id},list" if not self.is_super() else f"submenu,{self.id}"
+        if self.is_super():
+            return f"submenu,{self.id}"
+        if self.has_models:
+            return f"items,{self.id},list"
+        return f"items,{self.id},begin"
 
 
 class Item(models.Model):

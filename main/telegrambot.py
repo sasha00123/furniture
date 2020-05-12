@@ -68,7 +68,10 @@ def show_item(update: Update, context: CallbackContext, item: Item):
     controls = [
         InlineKeyboardButton('Все категории', callback_data='menu')
     ]
-    if item.category.parent is not None:
+
+    if item.category.has_models:
+        controls = [InlineKeyboardButton('Назад', callback_data=item.category.get_callback_data())] + controls
+    elif item.category.parent is not None:
         controls = [InlineKeyboardButton('Назад', callback_data=item.category.parent.get_callback_data())] + controls
 
     keyboard = InlineKeyboardMarkup(
@@ -78,10 +81,6 @@ def show_item(update: Update, context: CallbackContext, item: Item):
                                      callback_data=f'items,{item.category_id},prev,{item.pk}'),
                 InlineKeyboardButton('Следующий',
                                      callback_data=f'items,{item.category_id},next,{item.pk}')
-            ],
-            [
-                InlineKeyboardButton('Назад',
-                                     callback_data=item.category.get_callback_data()),
             ]
         ] + [controls])
 
@@ -103,6 +102,8 @@ def process_callback(update: Update, context: CallbackContext):
             item = None
             if action == 'get':
                 item = category.items.get(pk=args[0])
+            elif action == "begin":
+                item = category.items.first()
             elif action == 'next':
                 item = category.items.filter(pk__gt=int(args[0])).first()
             elif action == 'prev':

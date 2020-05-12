@@ -20,7 +20,7 @@ class ItemAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'count_items', 'is_super')
+    list_display = ('name', 'count_items', 'is_super', 'has_models')
 
 
 @admin.register(Message)
