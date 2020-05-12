@@ -36,7 +36,7 @@ class Item(models.Model):
     price = models.PositiveIntegerField(blank=True, default=0, verbose_name='Цена')
     delivery = models.BooleanField(default=False, verbose_name='Доставка')
 
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="items")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="items", verbose_name='Категория')
 
     class Meta:
         verbose_name = 'Товар'
