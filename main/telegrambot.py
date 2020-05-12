@@ -50,7 +50,7 @@ def show_category_list(update: Update, context: CallbackContext, category: Categ
     keyboard = InlineKeyboardMarkup(
         [[InlineKeyboardButton(f'Модель {i}', callback_data=f"items,{item.category_id},get,{item.pk}")
           for i, item in chunk]
-         for chunk in chunks(list(enumerate(category.items.all(), 1)), 2)]
+         for chunk in chunks(list(enumerate(category.items.order_by('pk'), 1)), 2)]
         + [controls])
     update.effective_message.reply_text(render(Message.get('submenu'), {'category': category}),
                                         reply_markup=keyboard)
