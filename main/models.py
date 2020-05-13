@@ -1,4 +1,7 @@
+import uuid
 from io import BytesIO
+import os
+from functools import partial
 
 from PIL import Image
 from django.db import models
@@ -90,9 +93,15 @@ class Message(models.Model):
         return self.name
 
 
+def unique_filename(folder, instance, filename):
+    _, ext = os.path.splitext(filename)
+    generated_name = f"{uuid.uuid4()}{ext}"
+    return os.path.join(folder, generated_name)
+
+
 class Cover(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='covers')
-    file = models.ImageField(upload_to='covers/', verbose_name='Обложка', max_length=255)
+    file = models.ImageField(upload_to=partial(unique_filename, 'covers'), verbose_name='Обложка', max_length=255)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
