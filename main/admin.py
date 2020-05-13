@@ -17,6 +17,7 @@ class ItemAdmin(admin.ModelAdmin):
     search_fields = ('description',)
     list_filter = ('category',)
     inlines = (CoverInline,)
+    list_per_page = 25
 
 
 @admin.register(Category)

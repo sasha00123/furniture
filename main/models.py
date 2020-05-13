@@ -92,7 +92,7 @@ class Message(models.Model):
 
 class Cover(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='covers')
-    file = models.ImageField(upload_to='covers/', verbose_name='Обложка')
+    file = models.ImageField(upload_to='covers/', verbose_name='Обложка', max_length=255)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
