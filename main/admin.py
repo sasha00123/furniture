@@ -15,6 +15,7 @@ class CoverInline(admin.TabularInline):
 class ItemAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'category', 'price', 'delivery')
     search_fields = ('description',)
+    list_filter = ('category',)
     inlines = (CoverInline,)
 
 
