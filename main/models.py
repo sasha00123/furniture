@@ -40,8 +40,14 @@ class Category(models.Model):
 
 
 class Item(models.Model):
+    CURRENCY_CHOICES = [
+        ('сум', 'сум'),
+        ('$', '$')
+    ]
+
     description = models.CharField(max_length=255, blank=True, default="", verbose_name='Описание')
     price = models.PositiveIntegerField(blank=True, default=0, verbose_name='Цена')
+    currency = models.CharField(max_length=8, choices=CURRENCY_CHOICES, default='сум', verbose_name='Валюта')
     delivery = models.BooleanField(default=False, verbose_name='Доставка')
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="items", verbose_name='Категория')
