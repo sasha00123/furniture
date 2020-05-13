@@ -42,7 +42,7 @@ class Category(models.Model):
 class Item(models.Model):
     CURRENCY_CHOICES = [
         ('сум', 'сум'),
-        ('$', '$')
+        ('USD', 'USD')
     ]
 
     description = models.CharField(max_length=255, blank=True, default="", verbose_name='Описание')
