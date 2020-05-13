@@ -1,3 +1,6 @@
+from io import BytesIO
+
+from PIL import Image
 from django.db import models
 
 
@@ -84,3 +87,10 @@ class Message(models.Model):
 class Cover(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='covers')
     file = models.ImageField(upload_to='covers/', verbose_name='Обложка')
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.file:
+            with Image.open(self.file) as img:
+                img = img.resize((640, 640), Image.ANTIALIAS)
+                img.save(self.file.path)
