@@ -107,6 +107,5 @@ class Cover(models.Model):
         super().save(*args, **kwargs)
         if self.file:
             with Image.open(self.file) as img:
-                k = min(1, 640 / max(img.height, img.width), 1)
-                img = img.resize((int(img.width * k), int(img.height * k)), Image.ANTIALIAS)
+                img.thumbnail((640, 640), Image.ANTIALIAS)
                 img.save(self.file.path)
