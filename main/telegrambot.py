@@ -28,7 +28,7 @@ def show_menu(update: Update, context: CallbackContext):
         [InlineKeyboardButton(category.name, callback_data=category.get_callback_data()) for category in chunk]
         for chunk in chunks(Category.objects.filter(parent=None), 2)])
     update.effective_message.reply_text(render(Message.get('menu')), reply_markup=keyboard,
-                                        parse_mode=ParseMode.MARKDOWN)
+                                        parse_mode=ParseMode.HTML)
 
 
 def show_submenu(update: Update, context: CallbackContext, category: Category):
@@ -42,7 +42,7 @@ def show_submenu(update: Update, context: CallbackContext, category: Category):
         ] + [controls])
     update.effective_message.reply_text(render(Message.get('submenu'), {'category': category}),
                                         reply_markup=keyboard,
-                                        parse_mode=ParseMode.MARKDOWN)
+                                        parse_mode=ParseMode.HTML)
 
 
 def show_category_list(update: Update, context: CallbackContext, category: Category):
@@ -56,7 +56,7 @@ def show_category_list(update: Update, context: CallbackContext, category: Categ
         + [controls])
     update.effective_message.reply_text(render(Message.get('submenu'), {'category': category}),
                                         reply_markup=keyboard,
-                                        parse_mode=ParseMode.MARKDOWN)
+                                        parse_mode=ParseMode.HTML)
 
 
 def show_item(update: Update, context: CallbackContext, item: Item):
@@ -89,7 +89,7 @@ def show_item(update: Update, context: CallbackContext, item: Item):
 
     update.effective_message.reply_text(render(Message.get('item'), {'item': item}),
                                         reply_markup=keyboard,
-                                        parse_mode=ParseMode.MARKDOWN)
+                                        parse_mode=ParseMode.HTML)
 
 
 def process_callback(update: Update, context: CallbackContext):
@@ -136,7 +136,7 @@ def start(update: Update, context: CallbackContext):
 
 def get_help(update: Update, context: CallbackContext):
     update.message.reply_text(render(Message.get("help")),
-                              parse_mode=ParseMode.MARKDOWN)
+                              parse_mode=ParseMode.HTML)
 
 
 def error(update, context: CallbackContext):
