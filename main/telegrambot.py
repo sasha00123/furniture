@@ -5,7 +5,7 @@ from typing import Optional
 from django.conf import settings
 from django.template import Template, Context
 from django_telegrambot.apps import DjangoTelegramBot
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, ParseMode
 from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
 
 from main.models import Item, TelegramUser, Category, Message
@@ -27,7 +27,8 @@ def show_menu(update: Update, context: CallbackContext):
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton(category.name, callback_data=category.get_callback_data()) for category in chunk]
         for chunk in chunks(Category.objects.filter(parent=None), 2)])
-    update.effective_message.reply_text(render(Message.get('menu')), reply_markup=keyboard)
+    update.effective_message.reply_text(render(Message.get('menu')), reply_markup=keyboard,
+                                        parse_mode=ParseMode.MARKDOWN)
 
 
 def show_submenu(update: Update, context: CallbackContext, category: Category):
@@ -40,7 +41,8 @@ def show_submenu(update: Update, context: CallbackContext, category: Category):
             for chunk in chunks(category.subcategories.all(), 2)
         ] + [controls])
     update.effective_message.reply_text(render(Message.get('submenu'), {'category': category}),
-                                        reply_markup=keyboard)
+                                        reply_markup=keyboard,
+                                        parse_mode=ParseMode.MARKDOWN)
 
 
 def show_category_list(update: Update, context: CallbackContext, category: Category):
@@ -53,7 +55,8 @@ def show_category_list(update: Update, context: CallbackContext, category: Categ
          for chunk in chunks(list(enumerate(category.items.order_by('pk'), 1)), 2)]
         + [controls])
     update.effective_message.reply_text(render(Message.get('submenu'), {'category': category}),
-                                        reply_markup=keyboard)
+                                        reply_markup=keyboard,
+                                        parse_mode=ParseMode.MARKDOWN)
 
 
 def show_item(update: Update, context: CallbackContext, item: Item):
@@ -85,7 +88,8 @@ def show_item(update: Update, context: CallbackContext, item: Item):
         ] + [controls])
 
     update.effective_message.reply_text(render(Message.get('item'), {'item': item}),
-                                        reply_markup=keyboard)
+                                        reply_markup=keyboard,
+                                        parse_mode=ParseMode.MARKDOWN)
 
 
 def process_callback(update: Update, context: CallbackContext):
@@ -131,7 +135,8 @@ def start(update: Update, context: CallbackContext):
 
 
 def get_help(update: Update, context: CallbackContext):
-    update.message.reply_text(render(Message.get("help")))
+    update.message.reply_text(render(Message.get("help")),
+                              parse_mode=ParseMode.MARKDOWN)
 
 
 def error(update, context: CallbackContext):
