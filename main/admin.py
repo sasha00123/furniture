@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from main.models import Category, Item, Message, TelegramUser, Cover
+from main.models import Category, Item, Message, TelegramUser, Cover, Entry
 
 
 class CoverInline(admin.TabularInline):
@@ -11,12 +11,19 @@ class CoverInline(admin.TabularInline):
     extra = 0
 
 
+class EntryInline(admin.StackedInline):
+    model = Entry
+    verbose_name = 'Описание'
+    verbose_name_plural = 'Описания'
+    extra = 0
+
+
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'category', 'price', 'currency', 'delivery')
-    search_fields = ('description',)
+    list_display = ('__str__', 'category', 'delivery')
+    search_fields = ('item__description',)
     list_filter = ('category',)
-    inlines = (CoverInline,)
+    inlines = (CoverInline, EntryInline)
     list_per_page = 25
 
 

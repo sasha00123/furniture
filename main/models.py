@@ -43,14 +43,9 @@ class Category(models.Model):
 
 
 class Item(models.Model):
-    CURRENCY_CHOICES = [
-        ('сум', 'сум'),
-        ('USD', 'USD')
-    ]
+    number = models.PositiveIntegerField(verbose_name='Номер', blank=True, null=True,
+                                         help_text='Не нужно указывать, если это не модель.')
 
-    description = models.CharField(max_length=255, blank=True, default="", verbose_name='Описание')
-    price = models.PositiveIntegerField(blank=True, default=0, verbose_name='Цена')
-    currency = models.CharField(max_length=8, choices=CURRENCY_CHOICES, default='сум', verbose_name='Валюта')
     delivery = models.BooleanField(default=False, verbose_name='Доставка')
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="items", verbose_name='Категория')
@@ -60,7 +55,27 @@ class Item(models.Model):
         verbose_name_plural = 'Товары'
 
     def __str__(self):
-        return self.description if self.description else "Без названия"
+        if self.number is not None:
+            return f"Модель ({self.number})"
+
+        result = '|'.join((entry.description for entry in self.entries.all()))
+        return result if result else "Без названия"
+
+
+class Entry(models.Model):
+    CURRENCY_CHOICES = [
+        ('сум', 'сум'),
+        ('USD', 'USD')
+    ]
+
+    description = models.CharField(max_length=255, blank=True, default="", verbose_name='Описание')
+    price = models.PositiveIntegerField(blank=True, default=0, verbose_name='Цена')
+    currency = models.CharField(max_length=8, choices=CURRENCY_CHOICES, default='сум', verbose_name='Валюта')
+
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='entries', verbose_name='Товар')
+
+    def __str__(self):
+        return self.description
 
 
 class TelegramUser(models.Model):
