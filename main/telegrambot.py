@@ -6,7 +6,7 @@ from django.conf import settings
 from django.template import Template, Context
 from django_telegrambot.apps import DjangoTelegramBot
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, ParseMode
-from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
+from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler, run_async
 
 from main.models import Item, TelegramUser, Category, Message
 
@@ -92,6 +92,7 @@ def show_item(update: Update, context: CallbackContext, item: Item):
                                         parse_mode=ParseMode.HTML)
 
 
+@run_async
 def process_callback(update: Update, context: CallbackContext):
     query, *args = update.callback_query.data.split(',')
     if query == 'menu':
@@ -124,6 +125,7 @@ def process_callback(update: Update, context: CallbackContext):
     update.callback_query.answer()
 
 
+@run_async
 def start(update: Update, context: CallbackContext):
     TelegramUser.objects.update_or_create(chat_id=update.effective_chat.id,
                                           defaults={
@@ -134,11 +136,13 @@ def start(update: Update, context: CallbackContext):
     show_menu(update, context)
 
 
+@run_async
 def get_help(update: Update, context: CallbackContext):
     update.message.reply_text(render(Message.get("help")),
                               parse_mode=ParseMode.HTML)
 
 
+@run_async
 def error(update, context: CallbackContext):
     logger.warn('Update "%s" caused error "%s"' % (update, context.error))
 
