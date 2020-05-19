@@ -113,6 +113,7 @@ if USE_WEBHOOK:
         'WEBHOOK_SITE': WEBSITE_LINK,
         'BOTS': [
             {
+                'MESSAGEQUEUE_ENABLED': True,
                 'TOKEN': config('TELEGRAM_BOT_TOKEN'),
             },
         ],
@@ -123,6 +124,7 @@ else:
         'MODE': 'POLLING',
         'BOTS': [
             {
+                'MESSAGEQUEUE_ENABLED': True,
                 'TOKEN': config('TELEGRAM_BOT_TOKEN'),
             },
         ],
