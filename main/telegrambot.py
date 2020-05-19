@@ -93,6 +93,7 @@ def show_item(update: Update, context: CallbackContext, item: Item):
                                         parse_mode=ParseMode.HTML)
 
 
+@run_async
 def process_callback(update: Update, context: CallbackContext):
     query, *args = update.callback_query.data.split(',')
     if query == 'menu':
@@ -125,6 +126,7 @@ def process_callback(update: Update, context: CallbackContext):
     update.callback_query.answer()
 
 
+@run_async
 def start(update: Update, context: CallbackContext):
     TelegramUser.objects.update_or_create(chat_id=update.effective_chat.id,
                                           defaults={
@@ -135,11 +137,13 @@ def start(update: Update, context: CallbackContext):
     show_menu(update, context)
 
 
+@run_async
 def get_help(update: Update, context: CallbackContext):
     update.message.reply_text(render(Message.get("help")),
                               parse_mode=ParseMode.HTML)
 
 
+@run_async
 def error(update, context: CallbackContext):
     logger.warn('Update "%s" caused error "%s"' % (update, context.error))
 
