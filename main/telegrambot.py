@@ -6,7 +6,8 @@ from django.conf import settings
 from django.template import Template, Context
 from django_telegrambot.apps import DjangoTelegramBot
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, ParseMode
-from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler, run_async
+from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
+from telegram.ext.dispatcher import run_async
 
 from main.models import Item, TelegramUser, Category, Message
 
