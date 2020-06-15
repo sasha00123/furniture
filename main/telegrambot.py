@@ -53,7 +53,7 @@ def show_info(update: Update, context: CallbackContext, info: InfoButton):
 
 
 def show_menu(update: Update, context: CallbackContext):
-    buttons = [InlineKeyboardButton(obj.name) for obj in
+    buttons = [InlineKeyboardButton(obj.name, callback_data=obj.get_callback_data()) for obj in
                sorted(chain(
                    Category.objects.filter(parent=None), InfoButton.objects.all()
                ), key=lambda x: x.priority)]
