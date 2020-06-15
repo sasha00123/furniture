@@ -51,7 +51,7 @@ def show_menu(update: Update, context: CallbackContext):
     info_buttons = [InlineKeyboardButton(info.title, callback_data=info.get_callback_data()) for info in
                     InfoButton.objects.all()]
 
-    keyboard = InlineKeyboardMarkup([chunk for chunk in chunks(sum([categories, info_buttons], start=[]), 2)])
+    keyboard = InlineKeyboardMarkup([chunk for chunk in chunks(sum([categories, info_buttons], []), 2)])
 
     update.effective_message.reply_text(render(Message.get('menu')), reply_markup=keyboard,
                                         parse_mode=ParseMode.HTML)
