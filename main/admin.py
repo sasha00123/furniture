@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from main.models import Category, Item, Message, TelegramUser, Cover, Entry, InfoButton
+from main.models import Category, Item, Message, TelegramUser, Cover, Entry, InfoButton, Map
 
 
 class InfoCoverInline(admin.TabularInline):
@@ -9,6 +9,13 @@ class InfoCoverInline(admin.TabularInline):
     verbose_name = 'Обложка'
     verbose_name_plural = 'Обложки'
     exclude = ("item",)
+    extra = 0
+
+
+class MapInline(admin.TabularInline):
+    model = Map
+    verbose_name = "Карта"
+    verbose_name_plural = "Карты"
     extra = 0
 
 
@@ -31,7 +38,7 @@ class EntryInline(admin.StackedInline):
 class InfoButtonInline(admin.ModelAdmin):
     list_display = ('title',)
     search_fields = ('title',)
-    inlines = (InfoCoverInline,)
+    inlines = (InfoCoverInline, MapInline)
     list_per_page = 25
 
 

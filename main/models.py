@@ -19,6 +19,13 @@ class InfoButton(models.Model):
         verbose_name_plural = 'Информационные кнопки'
 
 
+class Map(models.Model):
+    lat = models.FloatField(verbose_name='Широта')
+    long = models.FloatField(verbose_name='Долгота')
+
+    info = models.ForeignKey(InfoButton, on_delete=models.CASCADE, related_name='maps')
+
+
 class Category(models.Model):
     name = models.CharField(max_length=255)
     has_models = models.BooleanField(verbose_name="Разбиение на модели?")

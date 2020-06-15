@@ -24,6 +24,11 @@ def show_covers(update: Update, context: CallbackContext, covers):
                 [InputMediaPhoto(settings.WEBSITE_LINK + cover.file.url) for cover in chunk])
 
 
+def send_maps(update: Update, context: CallbackContext, maps):
+    for mp in maps:
+        update.effective_message.reply_location(mp.lat, mp.long)
+
+
 def chunks(lst, n):
     '''Yield successive n-sized chunks from lst.'''
     for i in range(0, len(lst), n):
@@ -35,6 +40,7 @@ def render(template: str, context: Optional[dict] = None):
 
 
 def show_info(update: Update, context: CallbackContext, info: InfoButton):
+    send_maps(update, context, info.maps.all())
     show_covers(update, context, info.covers.all())
 
     controls = [[InlineKeyboardButton('Все категории', callback_data='menu')]]
