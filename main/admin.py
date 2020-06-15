@@ -36,8 +36,8 @@ class EntryInline(admin.StackedInline):
 
 @admin.register(InfoButton)
 class InfoButtonInline(admin.ModelAdmin):
-    list_display = ('title',)
-    search_fields = ('title',)
+    list_display = ('name',)
+    search_fields = ('name',)
     inlines = (InfoCoverInline, MapInline)
     list_per_page = 25
 

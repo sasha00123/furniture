@@ -7,8 +7,18 @@ from PIL import Image
 from django.db import models
 
 
-class InfoButton(models.Model):
-    title = models.CharField(max_length=255, blank=True, default="", verbose_name='Заголовок')
+class MenuButton(models.Model):
+    name = models.CharField(max_length=255, blank=True, default="", verbose_name='Заголовок')
+    priority = models.IntegerField(default=0, blank=True, verbose_name='Приоритет')
+
+    def get_callback_data(self):
+        pass
+
+    class Meta:
+        abstract = True
+
+
+class InfoButton(MenuButton):
     description = models.TextField(blank=True, default="", verbose_name='Описание')
 
     def get_callback_data(self):
@@ -26,8 +36,7 @@ class Map(models.Model):
     info = models.ForeignKey(InfoButton, on_delete=models.CASCADE, related_name='maps')
 
 
-class Category(models.Model):
-    name = models.CharField(max_length=255)
+class Category(MenuButton):
     has_models = models.BooleanField(verbose_name="Разбиение на модели?")
 
     parent = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='subcategories',

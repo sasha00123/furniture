@@ -8,6 +8,7 @@ from django_telegrambot.apps import DjangoTelegramBot
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, ParseMode
 from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
 from telegram.ext.dispatcher import run_async
+from itertools import chain
 
 from main.models import Item, TelegramUser, Category, Message, InfoButton
 
@@ -52,12 +53,12 @@ def show_info(update: Update, context: CallbackContext, info: InfoButton):
 
 
 def show_menu(update: Update, context: CallbackContext):
-    categories = [InlineKeyboardButton(category.name, callback_data=category.get_callback_data())
-                  for category in Category.objects.filter(parent=None)]
-    info_buttons = [InlineKeyboardButton(info.title, callback_data=info.get_callback_data()) for info in
-                    InfoButton.objects.all()]
+    buttons = [InlineKeyboardButton(obj.name) for obj in
+               sorted(chain(
+                   Category.objects.filter(parent=None), InfoButton.objects.all()
+               ), key=lambda x: x.priority)]
 
-    keyboard = InlineKeyboardMarkup([chunk for chunk in chunks(sum([categories, info_buttons], []), 2)])
+    keyboard = InlineKeyboardMarkup([chunk for chunk in chunks(buttons, 2)])
 
     update.effective_message.reply_text(render(Message.get('menu')), reply_markup=keyboard,
                                         parse_mode=ParseMode.HTML)
