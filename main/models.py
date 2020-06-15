@@ -68,9 +68,11 @@ class Entry(models.Model):
         ('USD', 'USD')
     ]
 
-    description = models.TextField(blank=True, default="", verbose_name='Описание')
+    description = models.CharField(max_length=255, blank=True, default="", verbose_name='Заголовок')
+    long_description = models.TextField(blank=True, default="", verbose_name='Описание')
     price = models.PositiveIntegerField(blank=True, default=0, verbose_name='Цена')
     currency = models.CharField(max_length=8, choices=CURRENCY_CHOICES, default='сум', verbose_name='Валюта')
+    show_price = models.BooleanField(default=True)
 
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='entries', verbose_name='Товар')
 
