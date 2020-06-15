@@ -71,7 +71,7 @@ def show_submenu(update: Update, context: CallbackContext, category: Category):
     keyboard = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton(category.name, callback_data=category.get_callback_data()) for category in chunk]
-            for chunk in chunks(category.subcategories.all(), 2)
+            for chunk in chunks(category.subcategories.order_by('-priority'), 2)
         ] + [controls])
     update.effective_message.reply_text(render(Message.get('submenu'), {'category': category}),
                                         reply_markup=keyboard,
