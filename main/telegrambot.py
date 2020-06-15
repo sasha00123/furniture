@@ -56,7 +56,7 @@ def show_menu(update: Update, context: CallbackContext):
     buttons = [InlineKeyboardButton(obj.name, callback_data=obj.get_callback_data()) for obj in
                sorted(chain(
                    Category.objects.filter(parent=None), InfoButton.objects.all()
-               ), key=lambda x: x.priority)]
+               ), key=lambda x: x.priority, reverse=True)]
 
     keyboard = InlineKeyboardMarkup([chunk for chunk in chunks(buttons, 2)])
 
