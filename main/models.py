@@ -7,6 +7,18 @@ from PIL import Image
 from django.db import models
 
 
+class InfoButton(models.Model):
+    title = models.CharField(max_length=255, blank=True, default="", verbose_name='Заголовок')
+    description = models.TextField(blank=True, default="", verbose_name='Описание')
+
+    def get_callback_data(self):
+        return f"info,{self.id}"
+
+    class Meta:
+        verbose_name = 'Информационная кнопка'
+        verbose_name_plural = 'Информационные кнопки'
+
+
 class Category(models.Model):
     name = models.CharField(max_length=255)
     has_models = models.BooleanField(verbose_name="Разбиение на модели?")
@@ -117,7 +129,8 @@ def unique_filename(folder, instance, filename):
 
 
 class Cover(models.Model):
-    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='covers')
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='covers', blank=True, null=True)
+    info = models.ForeignKey(InfoButton, on_delete=models.CASCADE, related_name='covers', blank=True, null=True)
     file = models.ImageField(upload_to=partial(unique_filename, 'covers'), verbose_name='Обложка', max_length=255)
 
     def save(self, *args, **kwargs):

@@ -9,9 +9,19 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMe
 from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
 from telegram.ext.dispatcher import run_async
 
-from main.models import Item, TelegramUser, Category, Message
+from main.models import Item, TelegramUser, Category, Message, InfoButton
 
 logger = logging.getLogger(__name__)
+
+
+def show_covers(update: Update, context: CallbackContext, covers):
+    if settings.DEBUG:
+        for chunk in chunks(covers, 10):
+            update.effective_message.reply_media_group([InputMediaPhoto(cover.file.file) for cover in chunk])
+    else:
+        for chunk in chunks(covers, 10):
+            update.effective_message.reply_media_group(
+                [InputMediaPhoto(settings.WEBSITE_LINK + cover.file.url) for cover in chunk])
 
 
 def chunks(lst, n):
@@ -24,10 +34,25 @@ def render(template: str, context: Optional[dict] = None):
     return Template(template).render(Context(context))
 
 
+def show_info(update: Update, context: CallbackContext, info: InfoButton):
+    show_covers(update, context, info.covers.all())
+
+    controls = [[InlineKeyboardButton('Все категории', callback_data='menu')]]
+
+    keyboard = InlineKeyboardMarkup(controls)
+
+    update.effective_message.reply_text(render(Message.get('info'), {'info': info}), reply_markup=keyboard,
+                                        parse_mode=ParseMode.HTML)
+
+
 def show_menu(update: Update, context: CallbackContext):
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton(category.name, callback_data=category.get_callback_data()) for category in chunk]
-        for chunk in chunks(Category.objects.filter(parent=None), 2)])
+    categories = [InlineKeyboardButton(category.name, callback_data=category.get_callback_data())
+                  for category in Category.objects.filter(parent=None)]
+    info_buttons = [InlineKeyboardButton(info.title, callback_data=info.get_callback_data()) for info in
+                    InfoButton.objects.all()]
+
+    keyboard = InlineKeyboardMarkup([chunk for chunk in chunks(sum([categories, info_buttons], start=[]), 2)])
+
     update.effective_message.reply_text(render(Message.get('menu')), reply_markup=keyboard,
                                         parse_mode=ParseMode.HTML)
 
@@ -61,13 +86,7 @@ def show_category_list(update: Update, context: CallbackContext, category: Categ
 
 
 def show_item(update: Update, context: CallbackContext, item: Item):
-    if settings.DEBUG:
-        for chunk in chunks(item.covers.all(), 10):
-            update.effective_message.reply_media_group([InputMediaPhoto(cover.file.file) for cover in chunk])
-    else:
-        for chunk in chunks(item.covers.all(), 10):
-            update.effective_message.reply_media_group(
-                [InputMediaPhoto(settings.WEBSITE_LINK + cover.file.url) for cover in chunk])
+    show_covers(update, context, item.covers.all())
 
     controls = [
         InlineKeyboardButton('Все категории', callback_data='menu')
@@ -122,6 +141,11 @@ def process_callback(update: Update, context: CallbackContext):
         category = Category.objects.get(pk=category_id)
 
         show_submenu(update, context, category)
+    elif query == "info":
+        info_id = args[0]
+        info = InfoButton.objects.get(pk=info_id)
+
+        show_info(update, context, info)
 
     update.callback_query.answer()
 
