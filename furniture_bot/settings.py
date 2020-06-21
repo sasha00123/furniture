@@ -135,4 +135,4 @@ else:
     }
 
 LAUNCH_DATE = timezone.make_aware(
-    config('LAUNCH_DATE', dt.datetime(2020, 6, 20), cast=lambda date: dt.datetime.strptime(date, "%d.%m.%Y")))
+    config('LAUNCH_DATE', "20.06.2020", cast=lambda date: dt.datetime.strptime(date, "%d.%m.%Y")))
