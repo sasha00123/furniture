@@ -4,6 +4,9 @@ from pathlib import Path
 from decouple import config, Csv
 from dj_database_url import parse as db_url
 from django.template import Template
+from functools import partial
+import datetime as dt
+from django.utils import timezone
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -130,3 +133,6 @@ else:
         ],
 
     }
+
+LAUNCH_DATE = timezone.make_aware(
+    config('LAUNCH_DATE', dt.datetime(2020, 6, 20), cast=lambda date: dt.datetime.strptime(date, "%d.%m.%Y")))

@@ -112,6 +112,8 @@ class TelegramUser(models.Model):
     chat_id = models.BigIntegerField(db_index=True, verbose_name='ID чата')
     full_name = models.CharField(max_length=255, verbose_name='Полное имя')
     username = models.CharField(max_length=255, blank=True, verbose_name='Username')
+    is_admin = models.BooleanField(default=False, verbose_name='Администратор')
+    joined = models.DateTimeField(auto_now_add=True, verbose_name='Зарегистрирован')
 
     class Meta:
         verbose_name = 'Пользователь Telegram'

@@ -4,15 +4,29 @@ from typing import Optional
 
 from django.conf import settings
 from django.template import Template, Context
+from django.utils import timezone
+from django.utils.timezone import now
 from django_telegrambot.apps import DjangoTelegramBot
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, ParseMode
 from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
 from telegram.ext.dispatcher import run_async
 from itertools import chain
+import datetime as dt
 
 from main.models import Item, TelegramUser, Category, Message, InfoButton
 
 logger = logging.getLogger(__name__)
+
+
+def is_admin(func):
+    def authorized_request(update: Update, context: CallbackContext, *args, **kwargs):
+        user = TelegramUser.objects.get(chat_id=update.effective_chat.id)
+        if not user.is_admin:
+            update.effective_message.reply_text(render(Message.get("admin_access_required")))
+        else:
+            func(update, context, *args, **kwargs)
+
+    return authorized_request
 
 
 def show_covers(update: Update, context: CallbackContext, covers):
@@ -175,7 +189,17 @@ def get_help(update: Update, context: CallbackContext):
 
 
 @run_async
-def error(update, context: CallbackContext):
+@is_admin
+def get_stats(update: Update, context: CallbackContext):
+    update.effective_message.reply_text(render(Message.get("stats"), {
+        'days': (now() - settings.LAUNCH_DATE).days,
+        'total_users': TelegramUser.objects.count(),
+        'new_users_today': TelegramUser.objects.filter(joined__gte=timezone.now() - dt.timedelta(days=1)).count()
+    }))
+
+
+@run_async
+def error(update: Update, context: CallbackContext):
     logger.warn('Update "%s" caused error "%s"' % (update, context.error))
 
 
@@ -186,6 +210,7 @@ def main():
 
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CommandHandler('help', get_help))
+    dp.add_handler(CommandHandler('stats', get_stats))
 
     dp.add_handler(CallbackQueryHandler(process_callback))
 
