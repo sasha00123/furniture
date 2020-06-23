@@ -226,10 +226,10 @@ def ask_phone(update: Update, context: CallbackContext, user: TelegramUser):
 @inject_user
 def start(update: Update, context: CallbackContext, user: TelegramUser):
     if user.language is None:
-        ask_language()
+        ask_language(update, context)
         return LANGUAGE
     if user.phone is None:
-        ask_phone()
+        ask_phone(update, context)
         return PHONE
 
     show_menu(update, context)
