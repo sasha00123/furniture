@@ -81,7 +81,11 @@ def show_info(update: Update, context: CallbackContext, info: InfoButton, user: 
     keyboard = InlineKeyboardMarkup(controls)
 
     update.effective_message.reply_text(
-        render(Message.get('info', user.language), {'info': info, 'info_name': info.get_name(user.language)}),
+        render(Message.get('info', user.language), {
+            'info': info,
+            'info_name': info.get_name(user.language),
+            'info_description': info.get_description(user.language)
+        }),
         reply_markup=keyboard,
         parse_mode=ParseMode.HTML)
 

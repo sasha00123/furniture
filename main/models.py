@@ -41,6 +41,11 @@ class InfoButton(MenuButton):
             language = MessageLanguage.objects.get(default=True)
         return self.names.get(language=language).name
 
+    def get_description(self, language):
+        if language is None:
+            language = MessageLanguage.objects.get(default=True)
+        return self.descriptions.get(language=language).description
+
     def __str__(self):
         return ', '.join([name.name for name in self.names.all()])
 
@@ -64,7 +69,7 @@ class InfoButtonDescription(models.Model):
     language = models.ForeignKey(MessageLanguage, on_delete=models.CASCADE, related_name='descriptions',
                                  verbose_name='Язык', null=True)
     description = models.TextField(blank=True, default="", verbose_name='Описание')
-    button = models.ForeignKey(InfoButton, on_delete=models.CASCADE, verbose_name='Кнопка')
+    button = models.ForeignKey(InfoButton, on_delete=models.CASCADE, related_name='descriptions', verbose_name='Кнопка')
 
     class Meta:
         verbose_name = 'Перевод'
