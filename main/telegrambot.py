@@ -285,7 +285,10 @@ def set_phone(update: Update, context: CallbackContext, user: TelegramUser):
 
 @run_async
 def error(update: Update, context: CallbackContext):
-    logger.warn('Update "%s" caused error "%s"' % (update, context.error))
+    s = 'Update "%s" caused error "%s"' % (update, context.error)
+    logger.warning(s)
+    if settings.ADMIN_CHAT_ID:
+        context.bot.send_message(settings.ADMIN_CHAT_ID, s)
 
 
 def main():

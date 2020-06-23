@@ -137,6 +137,8 @@ else:
 LAUNCH_DATE = timezone.make_aware(
     config('LAUNCH_DATE', "20.06.2020", cast=lambda date: dt.datetime.strptime(date, "%d.%m.%Y")))
 
+ADMIN_CHAT_ID = config("ADMIN_CHAT_ID", default=0, cast=int)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
