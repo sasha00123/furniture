@@ -39,12 +39,20 @@ class InfoButton(MenuButton):
     def get_name(self, language):
         if language is None:
             language = MessageLanguage.objects.get(default=True)
-        return self.names.get(language=language).name
+        try:
+            return self.names.get(language=language).name
+        except InfoButtonName.DoesNotExist:
+            language = MessageLanguage.objects.get(default=True)
+            return self.names.get(language=language).name
 
     def get_description(self, language):
         if language is None:
             language = MessageLanguage.objects.get(default=True)
-        return self.descriptions.get(language=language).description
+        try:
+            return self.descriptions.get(language=language).description
+        except InfoButtonDescription.DoesNotExist:
+            language = MessageLanguage.objects.get(default=True)
+            return self.descriptions.get(language=language).description
 
     def __str__(self):
         return ', '.join([name.name for name in self.names.all()])
@@ -109,7 +117,11 @@ class Category(MenuButton):
     def get_name(self, language):
         if language is None:
             language = MessageLanguage.objects.get(default=True)
-        return self.names.get(language=language).name
+        try:
+            return self.names.get(language=language).name
+        except CategoryName.DoesNotExist:
+            language = MessageLanguage.objects.get(default=True)
+            return self.names.get(language=language).name
 
     is_super.boolean = True
     is_super.short_description = "Имеет подкатегории?"
