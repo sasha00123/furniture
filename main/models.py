@@ -108,12 +108,58 @@ class Entry(models.Model):
         return self.description
 
 
+class Message(models.Model):
+    name = models.CharField(max_length=255, db_index=True, unique=True, verbose_name='Название')
+    description = models.CharField(max_length=255, blank=True, verbose_name='Описание')
+
+    class Meta:
+        verbose_name = 'Сообщение'
+        verbose_name_plural = 'Сообщения'
+
+    @staticmethod
+    def get(name, language):
+        if language is None:
+            language = MessageLanguage.objects.get(default=True)
+        return Message.objects.get(name=name).values.get(language=language).text
+
+    def __str__(self):
+        return self.name
+
+
+class MessageLanguage(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Название", db_index=True, unique=True)
+    default = models.BooleanField(verbose_name='По умолчанию?', db_index=True, default=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Язык Сообщений'
+        verbose_name_plural = 'Языки Сообщений'
+
+
+class MessageValue(models.Model):
+    text = models.TextField(verbose_name="Текст")
+    language = models.ForeignKey(MessageLanguage, on_delete=models.CASCADE, related_name='messages',
+                                 verbose_name='Язык')
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='values', verbose_name='Сообщение')
+
+    class Meta:
+        verbose_name = 'Перевод'
+        verbose_name_plural = 'Переводы'
+
+
 class TelegramUser(models.Model):
-    chat_id = models.BigIntegerField(db_index=True, verbose_name='ID чата')
+    chat_id = models.BigIntegerField(db_index=True, verbose_name='ID чата', unique=True)
     full_name = models.CharField(max_length=255, verbose_name='Полное имя')
     username = models.CharField(max_length=255, blank=True, verbose_name='Username')
     is_admin = models.BooleanField(default=False, verbose_name='Администратор')
     joined = models.DateTimeField(auto_now_add=True, verbose_name='Зарегистрирован')
+
+    language = models.ForeignKey(MessageLanguage, on_delete=models.CASCADE,
+                                 related_name='users', verbose_name='Язык',
+                                 null=True)
+    phone = models.CharField(max_length=63, verbose_name='Телефон', null=True)
 
     class Meta:
         verbose_name = 'Пользователь Telegram'
@@ -121,23 +167,6 @@ class TelegramUser(models.Model):
 
     def __str__(self):
         return self.full_name
-
-
-class Message(models.Model):
-    name = models.CharField(max_length=255, db_index=True, unique=True)
-    description = models.CharField(max_length=255, blank=True)
-    value = models.TextField()
-
-    class Meta:
-        verbose_name = 'Сообщение'
-        verbose_name_plural = 'Сообщения'
-
-    @staticmethod
-    def get(name):
-        return Message.objects.get(name=name).value
-
-    def __str__(self):
-        return self.name
 
 
 def unique_filename(folder, instance, filename):

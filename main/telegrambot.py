@@ -7,24 +7,41 @@ from django.template import Template, Context
 from django.utils import timezone
 from django.utils.timezone import now
 from django_telegrambot.apps import DjangoTelegramBot
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, ParseMode
-from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, ParseMode, \
+    ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler, ConversationHandler, MessageHandler, \
+    Filters
 from telegram.ext.dispatcher import run_async
 from itertools import chain
 import datetime as dt
 
-from main.models import Item, TelegramUser, Category, Message, InfoButton
+from main.models import Item, TelegramUser, Category, Message, InfoButton, MessageLanguage
 
 logger = logging.getLogger(__name__)
 
+LANGUAGE, PHONE = list(range(2))
+
+
+def inject_user(func):
+    def injection_func(update: Update, context: CallbackContext, *args, **kwargs):
+        user, _ = TelegramUser.objects.update_or_create(chat_id=update.effective_chat.id,
+                                                        defaults={
+                                                            'full_name': update.effective_user.full_name,
+                                                            'username': update.effective_user.username
+                                                            if update.effective_user.username is not None else ''
+                                                        })
+        return func(update, context, *args, user=user, **kwargs)
+
+    return injection_func
+
 
 def is_admin(func):
-    def authorized_request(update: Update, context: CallbackContext, *args, **kwargs):
-        user = TelegramUser.objects.get(chat_id=update.effective_chat.id)
+    @inject_user
+    def authorized_request(update: Update, context: CallbackContext, user: TelegramUser, *args, **kwargs):
         if not user.is_admin:
-            update.effective_message.reply_text(render(Message.get("admin_access_required")))
+            update.effective_message.reply_text(render(Message.get("admin_access_required", user.language)))
         else:
-            func(update, context, *args, **kwargs)
+            return func(update, context, *args, **kwargs)
 
     return authorized_request
 
@@ -54,7 +71,8 @@ def render(template: str, context: Optional[dict] = None):
     return Template(template).render(Context(context))
 
 
-def show_info(update: Update, context: CallbackContext, info: InfoButton):
+@inject_user
+def show_info(update: Update, context: CallbackContext, info: InfoButton, user: TelegramUser):
     send_maps(update, context, info.maps.all())
     show_covers(update, context, info.covers.all())
 
@@ -62,11 +80,13 @@ def show_info(update: Update, context: CallbackContext, info: InfoButton):
 
     keyboard = InlineKeyboardMarkup(controls)
 
-    update.effective_message.reply_text(render(Message.get('info'), {'info': info}), reply_markup=keyboard,
+    update.effective_message.reply_text(render(Message.get('info', user.language), {'info': info}),
+                                        reply_markup=keyboard,
                                         parse_mode=ParseMode.HTML)
 
 
-def show_menu(update: Update, context: CallbackContext):
+@inject_user
+def show_menu(update: Update, context: CallbackContext, user: TelegramUser):
     buttons = [InlineKeyboardButton(obj.name, callback_data=obj.get_callback_data()) for obj in
                sorted(chain(
                    Category.objects.filter(parent=None), InfoButton.objects.all()
@@ -74,11 +94,12 @@ def show_menu(update: Update, context: CallbackContext):
 
     keyboard = InlineKeyboardMarkup([chunk for chunk in chunks(buttons, 2)])
 
-    update.effective_message.reply_text(render(Message.get('menu')), reply_markup=keyboard,
+    update.effective_message.reply_text(render(Message.get('menu', user.language)), reply_markup=keyboard,
                                         parse_mode=ParseMode.HTML)
 
 
-def show_submenu(update: Update, context: CallbackContext, category: Category):
+@inject_user
+def show_submenu(update: Update, context: CallbackContext, category: Category, user: TelegramUser):
     controls = [InlineKeyboardButton('Все категории', callback_data='menu')]
     if category.parent is not None:
         controls = [InlineKeyboardButton('Назад', callback_data=category.parent.get_callback_data())]
@@ -87,12 +108,13 @@ def show_submenu(update: Update, context: CallbackContext, category: Category):
             [InlineKeyboardButton(category.name, callback_data=category.get_callback_data()) for category in chunk]
             for chunk in chunks(category.subcategories.order_by('-priority'), 2)
         ] + [controls])
-    update.effective_message.reply_text(render(Message.get('submenu'), {'category': category}),
+    update.effective_message.reply_text(render(Message.get('submenu', user.language), {'category': category}),
                                         reply_markup=keyboard,
                                         parse_mode=ParseMode.HTML)
 
 
-def show_category_list(update: Update, context: CallbackContext, category: Category):
+@inject_user
+def show_category_list(update: Update, context: CallbackContext, category: Category, user: TelegramUser):
     controls = [InlineKeyboardButton('Все категории', callback_data='menu')]
     if category.parent is not None:
         controls = [InlineKeyboardButton('Назад', callback_data=category.parent.get_callback_data())]
@@ -101,12 +123,13 @@ def show_category_list(update: Update, context: CallbackContext, category: Categ
           for i, item in chunk]
          for chunk in chunks(list(enumerate(category.items.order_by('pk'), 1)), 2)]
         + [controls])
-    update.effective_message.reply_text(render(Message.get('submenu'), {'category': category}),
+    update.effective_message.reply_text(render(Message.get('submenu', user.language), {'category': category}),
                                         reply_markup=keyboard,
                                         parse_mode=ParseMode.HTML)
 
 
-def show_item(update: Update, context: CallbackContext, item: Item):
+@inject_user
+def show_item(update: Update, context: CallbackContext, item: Item, user: TelegramUser):
     show_covers(update, context, item.covers.all())
 
     controls = [
@@ -128,7 +151,7 @@ def show_item(update: Update, context: CallbackContext, item: Item):
             ]
         ] + [controls])
 
-    update.effective_message.reply_text(render(Message.get('item'), {'item': item}),
+    update.effective_message.reply_text(render(Message.get('item', user.language), {'item': item}),
                                         reply_markup=keyboard,
                                         parse_mode=ParseMode.HTML)
 
@@ -171,31 +194,69 @@ def process_callback(update: Update, context: CallbackContext):
     update.callback_query.answer()
 
 
-@run_async
-def start(update: Update, context: CallbackContext):
-    TelegramUser.objects.update_or_create(chat_id=update.effective_chat.id,
-                                          defaults={
-                                              'full_name': update.effective_user.full_name,
-                                              'username': update.effective_user.username
-                                              if update.effective_user.username is not None else ''
-                                          })
-    show_menu(update, context)
+@inject_user
+def start(update: Update, context: CallbackContext, user: TelegramUser):
+    # Choosing language
+    buttons = [language.name for language in MessageLanguage.objects.all()]
+    keyboard = ReplyKeyboardMarkup([chunk for chunk in chunks(buttons, 2)])
+    update.message.reply_text(render(Message.get("language", MessageLanguage.objects.get(default=True))),
+                              reply_markup=keyboard)
+    return LANGUAGE
 
 
 @run_async
-def get_help(update: Update, context: CallbackContext):
-    update.message.reply_text(render(Message.get("help")),
+@inject_user
+def get_help(update: Update, context: CallbackContext, user: TelegramUser):
+    update.message.reply_text(render(Message.get("help", user.language)),
                               parse_mode=ParseMode.HTML)
 
 
 @run_async
 @is_admin
-def get_stats(update: Update, context: CallbackContext):
-    update.effective_message.reply_text(render(Message.get("stats"), {
+@inject_user
+def get_stats(update: Update, context: CallbackContext, user: TelegramUser):
+    update.effective_message.reply_text(render(Message.get("stats", user.language), {
         'days': (now() - settings.LAUNCH_DATE).days,
         'total_users': TelegramUser.objects.count(),
         'new_users_today': TelegramUser.objects.filter(joined__gte=timezone.now() - dt.timedelta(days=1)).count()
     }))
+
+
+@inject_user
+def set_language(update: Update, context: CallbackContext, user: TelegramUser):
+    try:
+        language = MessageLanguage.objects.get(name=update.message.text)
+    except MessageLanguage.DoesNotExist:
+        update.message.reply_text(Message.get("wrong_language", user.language))
+        return LANGUAGE
+
+    # Saving
+    user.language = language
+    user.save()
+
+    # Asking for phone
+    keyboard = ReplyKeyboardMarkup(
+        [[KeyboardButton(render(Message.get("phone_button", user.language)), request_contact=True)]])
+    update.message.reply_text(Message.get("phone", user.language), reply_markup=keyboard)
+
+    return PHONE
+
+
+@inject_user
+def set_phone(update: Update, context: CallbackContext, user: TelegramUser):
+    if update.message.contact.user_id != update.message.chat_id:
+        update.message.reply_text(render(Message.get("wrong_phone", user.language)))
+        return PHONE
+
+    user.phone = update.message.contact.phone_number
+    user.save()
+
+    show_menu(update, context)
+
+    update.message.reply_text(render(Message.get("data_saved", user.language)),
+                              reply_markup=ReplyKeyboardRemove())
+
+    return ConversationHandler.END
 
 
 @run_async
@@ -208,7 +269,17 @@ def main():
 
     dp = DjangoTelegramBot.dispatcher
 
-    dp.add_handler(CommandHandler('start', start))
+    dp.add_handler(ConversationHandler(
+        entry_points=[CommandHandler('start', start)],
+        states={
+            LANGUAGE: [MessageHandler(Filters.text & ~Filters.command, set_language)],
+            PHONE: [MessageHandler(Filters.contact, set_phone)]
+        },
+        fallbacks=[],
+        name="InitialConversation",
+        persistent=True,
+        allow_reentry=True
+    ))
     dp.add_handler(CommandHandler('help', get_help))
     dp.add_handler(CommandHandler('stats', get_stats))
 
