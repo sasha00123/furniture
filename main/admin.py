@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 from main.models import Category, Item, Message, TelegramUser, Cover, Entry, InfoButton, Map, MessageValue, \
-    MessageLanguage
+    MessageLanguage, InfoButtonDescription, InfoButtonName, CategoryName
 
 
 class InfoCoverInline(admin.TabularInline):
@@ -35,11 +35,32 @@ class EntryInline(admin.StackedInline):
     extra = 0
 
 
+class InfoButtonNameInline(admin.StackedInline):
+    model = InfoButtonName
+    verbose_name = 'Заголовок'
+    verbose_name_plural = 'Заголовки'
+    extra = 0
+
+
+class InfoButtonDescriptionInline(admin.StackedInline):
+    model = InfoButtonDescription
+    verbose_name = 'Перевод'
+    verbose_name_plural = 'Переводы'
+    extra = 0
+
+
+class CategoryNameInline(admin.StackedInline):
+    model = CategoryName
+    verbose_name = 'Заголовок'
+    verbose_name_plural = 'Заголовки'
+    extra = 0
+
+
 @admin.register(InfoButton)
-class InfoButtonInline(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
-    inlines = (InfoCoverInline, MapInline)
+class InfoButtonAdmin(admin.ModelAdmin):
+    list_display = ('__str__',)
+    search_fields = ('__str__',)
+    inlines = (InfoButtonNameInline, InfoButtonDescriptionInline, InfoCoverInline, MapInline)
     list_per_page = 25
 
 
@@ -54,7 +75,8 @@ class ItemAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'count_items', 'is_super', 'has_models')
+    list_display = ('__str__', 'count_items', 'is_super', 'has_models')
+    inlines = [CategoryNameInline]
 
 
 class MessageValueInline(admin.StackedInline):

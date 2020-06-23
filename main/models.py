@@ -7,26 +7,68 @@ from PIL import Image
 from django.db import models
 
 
+class MessageLanguage(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Название", db_index=True, unique=True)
+    default = models.BooleanField(verbose_name='По умолчанию?', db_index=True, default=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Язык Сообщений'
+        verbose_name_plural = 'Языки Сообщений'
+
+
 class MenuButton(models.Model):
-    name = models.CharField(max_length=255, blank=True, default="", verbose_name='Заголовок')
     priority = models.IntegerField(default=0, blank=True, verbose_name='Приоритет')
 
+    def get_name(self, language):
+        raise NotImplementedError
+
     def get_callback_data(self):
-        pass
+        raise NotImplementedError
 
     class Meta:
         abstract = True
 
 
 class InfoButton(MenuButton):
-    description = models.TextField(blank=True, default="", verbose_name='Описание')
-
     def get_callback_data(self):
         return f"info,{self.id}"
+
+    def get_name(self, language):
+        if language is None:
+            language = MessageLanguage.objects.get(default=True)
+        return self.names.get(language=language).name
+
+    def __str__(self):
+        return ', '.join([name.name for name in self.names.all()])
 
     class Meta:
         verbose_name = 'Информационная кнопка'
         verbose_name_plural = 'Информационные кнопки'
+
+
+class InfoButtonName(models.Model):
+    language = models.ForeignKey(MessageLanguage, on_delete=models.CASCADE, related_name='info_button_names',
+                                 verbose_name='Язык')
+    name = models.CharField(max_length=255, blank=True, default="", verbose_name='Заголовок')
+    button = models.ForeignKey(InfoButton, on_delete=models.CASCADE, related_name='names', verbose_name='Кнопка')
+
+    class Meta:
+        verbose_name = 'Заголовок'
+        verbose_name_plural = 'Заголовки'
+
+
+class InfoButtonDescription(models.Model):
+    language = models.ForeignKey(MessageLanguage, on_delete=models.CASCADE, related_name='descriptions',
+                                 verbose_name='Язык', null=True)
+    description = models.TextField(blank=True, default="", verbose_name='Описание')
+    button = models.ForeignKey(InfoButton, on_delete=models.CASCADE, verbose_name='Кнопка')
+
+    class Meta:
+        verbose_name = 'Перевод'
+        verbose_name_plural = 'Переводы'
 
 
 class Map(models.Model):
@@ -54,10 +96,15 @@ class Category(MenuButton):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return self.name
+        return ', '.join([name.name for name in self.names.all()])
 
     def is_super(self):
         return self.subcategories.count() > 0
+
+    def get_name(self, language):
+        if language is None:
+            language = MessageLanguage.objects.get(default=True)
+        return self.names.get(language=language).name
 
     is_super.boolean = True
     is_super.short_description = "Имеет подкатегории?"
@@ -68,6 +115,17 @@ class Category(MenuButton):
         if self.has_models:
             return f"items,{self.id},list"
         return f"items,{self.id},begin"
+
+
+class CategoryName(models.Model):
+    language = models.ForeignKey(MessageLanguage, on_delete=models.CASCADE, related_name='category_names',
+                                 verbose_name='Язык')
+    name = models.CharField(max_length=255, blank=True, default="", verbose_name='Заголовок')
+    button = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='names', verbose_name='Кнопка')
+
+    class Meta:
+        verbose_name = 'Заголовок'
+        verbose_name_plural = 'Заголовки'
 
 
 class Item(models.Model):
@@ -89,6 +147,11 @@ class Item(models.Model):
         result = '|'.join((entry.description for entry in self.entries.all()))
         return result if result else "Без названия"
 
+    def get_entries(self, language):
+        if language is None:
+            language = MessageLanguage.objects.get(default=True)
+        return self.entries.filter(language=language)
+
 
 class Entry(models.Model):
     CURRENCY_CHOICES = [
@@ -96,6 +159,9 @@ class Entry(models.Model):
         ('USD', 'USD')
     ]
 
+    language = models.ForeignKey(MessageLanguage, on_delete=models.CASCADE,
+                                 related_name='entries', verbose_name="Язык",
+                                 null=True)
     description = models.CharField(max_length=255, blank=True, default="", verbose_name='Заголовок')
     long_description = models.TextField(blank=True, default="", verbose_name='Описание')
     price = models.PositiveIntegerField(blank=True, default=0, verbose_name='Цена')
@@ -124,18 +190,6 @@ class Message(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class MessageLanguage(models.Model):
-    name = models.CharField(max_length=255, verbose_name="Название", db_index=True, unique=True)
-    default = models.BooleanField(verbose_name='По умолчанию?', db_index=True, default=False)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = 'Язык Сообщений'
-        verbose_name_plural = 'Языки Сообщений'
 
 
 class MessageValue(models.Model):

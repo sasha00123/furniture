@@ -80,14 +80,15 @@ def show_info(update: Update, context: CallbackContext, info: InfoButton, user: 
 
     keyboard = InlineKeyboardMarkup(controls)
 
-    update.effective_message.reply_text(render(Message.get('info', user.language), {'info': info}),
-                                        reply_markup=keyboard,
-                                        parse_mode=ParseMode.HTML)
+    update.effective_message.reply_text(
+        render(Message.get('info', user.language), {'info': info, 'info_name': info.get_name(user.language)}),
+        reply_markup=keyboard,
+        parse_mode=ParseMode.HTML)
 
 
 @inject_user
 def show_menu(update: Update, context: CallbackContext, user: TelegramUser):
-    buttons = [InlineKeyboardButton(obj.name, callback_data=obj.get_callback_data()) for obj in
+    buttons = [InlineKeyboardButton(obj.get_name(user.language), callback_data=obj.get_callback_data()) for obj in
                sorted(chain(
                    Category.objects.filter(parent=None), InfoButton.objects.all()
                ), key=lambda x: x.priority, reverse=True)]
@@ -105,10 +106,13 @@ def show_submenu(update: Update, context: CallbackContext, category: Category, u
         controls = [InlineKeyboardButton('Назад', callback_data=category.parent.get_callback_data())]
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton(category.name, callback_data=category.get_callback_data()) for category in chunk]
+            [InlineKeyboardButton(category.get_name(user.language), callback_data=category.get_callback_data()) for
+             category in chunk]
             for chunk in chunks(category.subcategories.order_by('-priority'), 2)
         ] + [controls])
-    update.effective_message.reply_text(render(Message.get('submenu', user.language), {'category': category}),
+    update.effective_message.reply_text(render(Message.get('submenu', user.language),
+                                               {'category': category,
+                                                'category_name': category.get_name(user.language)}),
                                         reply_markup=keyboard,
                                         parse_mode=ParseMode.HTML)
 
@@ -123,7 +127,11 @@ def show_category_list(update: Update, context: CallbackContext, category: Categ
           for i, item in chunk]
          for chunk in chunks(list(enumerate(category.items.order_by('pk'), 1)), 2)]
         + [controls])
-    update.effective_message.reply_text(render(Message.get('submenu', user.language), {'category': category}),
+    update.effective_message.reply_text(render(Message.get('submenu', user.language),
+                                               {
+                                                   'category': category,
+                                                   'category_name': category.get_name(user.language)
+                                               }),
                                         reply_markup=keyboard,
                                         parse_mode=ParseMode.HTML)
 
@@ -151,9 +159,10 @@ def show_item(update: Update, context: CallbackContext, item: Item, user: Telegr
             ]
         ] + [controls])
 
-    update.effective_message.reply_text(render(Message.get('item', user.language), {'item': item}),
-                                        reply_markup=keyboard,
-                                        parse_mode=ParseMode.HTML)
+    update.effective_message.reply_text(
+        render(Message.get('item', user.language), {'item': item, 'entries': item.get_entries(user.language)}),
+        reply_markup=keyboard,
+        parse_mode=ParseMode.HTML)
 
 
 @run_async
@@ -195,16 +204,31 @@ def process_callback(update: Update, context: CallbackContext):
 
 
 @inject_user
-def start(update: Update, context: CallbackContext, user: TelegramUser):
-    # Choosing language
+def ask_language(update: Update, context: Context, user: TelegramUser):
     buttons = [language.name for language in MessageLanguage.objects.all()]
     keyboard = ReplyKeyboardMarkup([chunk for chunk in chunks(buttons, 2)])
     update.message.reply_text(render(Message.get("language", MessageLanguage.objects.get(default=True))),
                               reply_markup=keyboard)
+
+
+@inject_user
+def ask_phone(update: Update, context: CallbackContext, user: TelegramUser):
+    # Asking for phone
+    keyboard = ReplyKeyboardMarkup(
+        [[KeyboardButton(render(Message.get("phone_button", user.language)), request_contact=True)]])
+    update.message.reply_text(Message.get("phone", user.language), reply_markup=keyboard)
+
+
+@inject_user
+def start(update: Update, context: CallbackContext, user: TelegramUser):
     if user.language is None:
+        ask_language()
         return LANGUAGE
     if user.phone is None:
+        ask_phone()
         return PHONE
+
+    show_menu(update, context)
     return ConversationHandler.END
 
 
@@ -238,11 +262,7 @@ def set_language(update: Update, context: CallbackContext, user: TelegramUser):
     user.language = language
     user.save()
 
-    # Asking for phone
-    keyboard = ReplyKeyboardMarkup(
-        [[KeyboardButton(render(Message.get("phone_button", user.language)), request_contact=True)]])
-    update.message.reply_text(Message.get("phone", user.language), reply_markup=keyboard)
-
+    ask_phone()
     return PHONE
 
 
