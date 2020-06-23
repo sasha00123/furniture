@@ -251,10 +251,10 @@ def set_phone(update: Update, context: CallbackContext, user: TelegramUser):
     user.phone = update.message.contact.phone_number
     user.save()
 
-    show_menu(update, context)
-
     update.message.reply_text(render(Message.get("data_saved", user.language)),
                               reply_markup=ReplyKeyboardRemove())
+
+    show_menu(update, context)
 
     return ConversationHandler.END
 
