@@ -191,7 +191,11 @@ class Message(models.Model):
     def get(name, language):
         if language is None:
             language = MessageLanguage.objects.get(default=True)
-        return Message.objects.get(name=name).values.get(language=language).text
+        try:
+            return Message.objects.get(name=name).values.get(language=language).text
+        except Message.DoesNotExist:
+            language = MessageLanguage.objects.get(default=True)
+            return Message.objects.get(name=name).values.get(language=language).text
 
     def __str__(self):
         return self.name
