@@ -193,7 +193,7 @@ class Message(models.Model):
             language = MessageLanguage.objects.get(default=True)
         try:
             return Message.objects.get(name=name).values.get(language=language).text
-        except Message.DoesNotExist:
+        except MessageValue.DoesNotExist:
             language = MessageLanguage.objects.get(default=True)
             return Message.objects.get(name=name).values.get(language=language).text
 
