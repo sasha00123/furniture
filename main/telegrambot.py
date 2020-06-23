@@ -213,6 +213,7 @@ def ask_language(update: Update, context: Context, user: TelegramUser):
     keyboard = ReplyKeyboardMarkup([chunk for chunk in chunks(buttons, 2)])
     update.message.reply_text(render(Message.get("language", MessageLanguage.objects.get(default=True))),
                               reply_markup=keyboard)
+    return LANGUAGE
 
 
 @inject_user
@@ -221,16 +222,15 @@ def ask_phone(update: Update, context: CallbackContext, user: TelegramUser):
     keyboard = ReplyKeyboardMarkup(
         [[KeyboardButton(render(Message.get("phone_button", user.language)), request_contact=True)]])
     update.message.reply_text(Message.get("phone", user.language), reply_markup=keyboard)
+    return PHONE
 
 
 @inject_user
 def start(update: Update, context: CallbackContext, user: TelegramUser):
     if user.language is None:
-        ask_language(update, context)
-        return LANGUAGE
+        return ask_language(update, context)
     if user.phone is None:
-        ask_phone(update, context)
-        return PHONE
+        return ask_phone(update, context)
 
     show_menu(update, context)
     return ConversationHandler.END
@@ -255,16 +255,39 @@ def get_stats(update: Update, context: CallbackContext, user: TelegramUser):
 
 
 @inject_user
-def set_language(update: Update, context: CallbackContext, user: TelegramUser):
+def process_language(update: Update, context: CallbackContext, user: TelegramUser):
     try:
         language = MessageLanguage.objects.get(name=update.message.text)
     except MessageLanguage.DoesNotExist:
         update.message.reply_text(Message.get("wrong_language", user.language))
-        return LANGUAGE
+        return False
 
     # Saving
     user.language = language
     user.save()
+
+    return True
+
+
+@inject_user
+def data_saved(update: Update, context: CallbackContext, user: TelegramUser):
+    update.message.reply_text(render(Message.get("data_saved", user.language)),
+                              reply_markup=ReplyKeyboardRemove())
+
+
+def update_language(update: Update, context: CallbackContext):
+    ok = process_language(update, context)
+    if not ok:
+        return LANGUAGE
+
+    data_saved(update, context)
+    return ConversationHandler.END
+
+
+def set_language(update: Update, context: CallbackContext):
+    ok = process_language(update, context)
+    if not ok:
+        return LANGUAGE
 
     ask_phone(update, context)
     return PHONE
@@ -311,6 +334,18 @@ def main():
         persistent=True,
         allow_reentry=True
     ))
+
+    dp.add_handler(ConversationHandler(
+        entry_points=[CommandHandler('lang', ask_language)],
+        states={
+            LANGUAGE: [MessageHandler(Filters.text & ~Filters.command, update_language)],
+        },
+        fallbacks=[CommandHandler('cancel', data_saved)],
+        name="UpdateLanguage",
+        persistent=True,
+        allow_reentry=True
+    ))
+
     dp.add_handler(CommandHandler('help', get_help))
     dp.add_handler(CommandHandler('stats', get_stats))
 
