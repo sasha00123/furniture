@@ -266,7 +266,7 @@ def set_language(update: Update, context: CallbackContext, user: TelegramUser):
     user.language = language
     user.save()
 
-    ask_phone()
+    ask_phone(update, context)
     return PHONE
 
 
