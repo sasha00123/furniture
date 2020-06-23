@@ -201,7 +201,11 @@ def start(update: Update, context: CallbackContext, user: TelegramUser):
     keyboard = ReplyKeyboardMarkup([chunk for chunk in chunks(buttons, 2)])
     update.message.reply_text(render(Message.get("language", MessageLanguage.objects.get(default=True))),
                               reply_markup=keyboard)
-    return LANGUAGE
+    if user.language is None:
+        return LANGUAGE
+    if user.phone is None:
+        return PHONE
+    return ConversationHandler.END
 
 
 @run_async
