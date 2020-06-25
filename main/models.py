@@ -6,6 +6,8 @@ from functools import partial
 from PIL import Image
 from django.db import models
 
+import logging
+
 
 class MessageLanguage(models.Model):
     name = models.CharField(max_length=255, verbose_name="Название", db_index=True, unique=True)
@@ -193,7 +195,6 @@ class Entry(models.Model):
 
 class Message(models.Model):
     name = models.CharField(max_length=255, db_index=True, unique=True, verbose_name='Название')
-    description = models.CharField(max_length=255, blank=True, verbose_name='Описание')
 
     class Meta:
         verbose_name = 'Сообщение'
@@ -213,6 +214,14 @@ class Message(models.Model):
         return self.name
 
 
+class MessageDescription(models.Model):
+    description = models.CharField(max_length=255, blank=True, verbose_name='Описание')
+    language = models.ForeignKey(MessageLanguage, on_delete=models.CASCADE, related_name='message_descriptions',
+                                 verbose_name='Язык')
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='descriptions',
+                                verbose_name='Сообщение')
+
+
 class MessageValue(models.Model):
     text = models.TextField(verbose_name="Текст")
     language = models.ForeignKey(MessageLanguage, on_delete=models.CASCADE, related_name='messages',
@@ -226,7 +235,8 @@ class MessageValue(models.Model):
 
 class TelegramUser(models.Model):
     chat_id = models.BigIntegerField(db_index=True, verbose_name='ID чата', unique=True)
-    full_name = models.CharField(max_length=255, verbose_name='Полное имя')
+    full_name = models.CharField(max_length=255, verbose_name='Имя Telegram')
+    real_name = models.CharField(max_length=255, verbose_name='Полное имя', default="")
     username = models.CharField(max_length=255, blank=True, verbose_name='Username')
     is_admin = models.BooleanField(default=False, verbose_name='Администратор')
     joined = models.DateTimeField(auto_now_add=True, verbose_name='Зарегистрирован')

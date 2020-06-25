@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 from main.models import Category, Item, Message, TelegramUser, Cover, Entry, InfoButton, Map, MessageValue, \
-    MessageLanguage, InfoButtonDescription, InfoButtonName, CategoryName
+    MessageLanguage, InfoButtonDescription, InfoButtonName, CategoryName, MessageDescription
 
 
 class InfoCoverInline(admin.TabularInline):
@@ -86,15 +86,22 @@ class MessageValueInline(admin.StackedInline):
     extra = 0
 
 
+class MessageDescriptionInline(admin.StackedInline):
+    model = MessageDescription
+    verbose_name = 'Описание'
+    verbose_name_plural = 'Описания'
+    extra = 0
+
+
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description')
-    inlines = [MessageValueInline]
+    list_display = ('name',)
+    inlines = [MessageDescriptionInline, MessageValueInline]
 
 
 @admin.register(TelegramUser)
 class TelegramUserAdmin(admin.ModelAdmin):
-    list_display = ['chat_id', 'full_name', 'username', 'phone']
+    list_display = ['chat_id', 'full_name', 'real_name', 'username', 'phone']
     search_fields = ['full_name', 'username']
 
 
