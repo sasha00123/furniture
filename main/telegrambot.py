@@ -66,7 +66,7 @@ class KeyboardEntryPoint:
 def get_main_keyboard(update: Update, context: CallbackContext, user: TelegramUser):
     return ReplyKeyboardMarkup([
         [Message.get(control, user.language)] for control in
-        ("change_language_button", "change_full_name_button", "main_menu_button")
+        ("change_language_button", "change_full_name_button", "main_menu_button", "help_button")
     ], one_time_keyboard=True, resize_keyboard=True)
 
 
@@ -412,6 +412,7 @@ def main():
     ))
 
     dp.add_handler(CommandHandler('help', get_help))
+    dp.add_handler(MessageHandler(Filters.text([KeyboardEntryPoint("help_button")]), get_help))
     dp.add_handler(CommandHandler('stats', get_stats))
 
     dp.add_handler(CallbackQueryHandler(process_callback))
