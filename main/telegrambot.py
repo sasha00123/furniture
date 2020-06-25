@@ -65,8 +65,8 @@ class KeyboardEntryPoint:
 @inject_user
 def get_main_keyboard(update: Update, context: CallbackContext, user: TelegramUser):
     return ReplyKeyboardMarkup([
-        [Message.get(control, user.language)] for control in
-        ("change_language_button", "change_full_name_button", "main_menu_button", "help_button")
+        [Message.get("change_language_button", user.language), Message.get("main_menu_button", user.language)],
+        [Message.get("change_full_name_button", user.language), Message.get("help_button", user.language)],
     ], one_time_keyboard=True, resize_keyboard=True)
 
 
@@ -132,9 +132,10 @@ def show_menu(update: Update, context: CallbackContext, user: TelegramUser):
 
 @inject_user
 def show_submenu(update: Update, context: CallbackContext, category: Category, user: TelegramUser):
-    controls = [InlineKeyboardButton('Все категории', callback_data='menu')]
+    controls = [InlineKeyboardButton(Message.get("all_categories", user.language), callback_data='menu')]
     if category.parent is not None:
-        controls = [InlineKeyboardButton('Назад', callback_data=category.parent.get_callback_data())]
+        controls = [
+            InlineKeyboardButton(Message.get("back", user.language), callback_data=category.parent.get_callback_data())]
     keyboard = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton(category.get_name(user.language), callback_data=category.get_callback_data()) for
@@ -150,11 +151,13 @@ def show_submenu(update: Update, context: CallbackContext, category: Category, u
 
 @inject_user
 def show_category_list(update: Update, context: CallbackContext, category: Category, user: TelegramUser):
-    controls = [InlineKeyboardButton('Все категории', callback_data='menu')]
+    controls = [InlineKeyboardButton(Message.get("all_categories", user.language), callback_data='menu')]
     if category.parent is not None:
-        controls = [InlineKeyboardButton('Назад', callback_data=category.parent.get_callback_data())]
+        controls = [
+            InlineKeyboardButton(Message.get("back", user.language), callback_data=category.parent.get_callback_data())]
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton(f'Модель {i}', callback_data=f"items,{item.category_id},get,{item.pk}")
+        [[InlineKeyboardButton(f'{Message.get("model", user.language)} {i}',
+                               callback_data=f"items,{item.category_id},get,{item.pk}")
           for i, item in chunk]
          for chunk in chunks(list(enumerate(category.items.order_by('pk'), 1)), 2)]
         + [controls])
@@ -172,20 +175,22 @@ def show_item(update: Update, context: CallbackContext, item: Item, user: Telegr
     show_covers(update, context, item.covers.all())
 
     controls = [
-        InlineKeyboardButton('Все категории', callback_data='menu')
+        InlineKeyboardButton(Message.get("all_categories", user.language), callback_data='menu')
     ]
 
     if item.category.has_models:
-        controls = [InlineKeyboardButton('Назад', callback_data=item.category.get_callback_data())] + controls
+        controls = [InlineKeyboardButton(Message.get("back", user.language),
+                                         callback_data=item.category.get_callback_data())] + controls
     elif item.category.parent is not None:
-        controls = [InlineKeyboardButton('Назад', callback_data=item.category.parent.get_callback_data())] + controls
+        controls = [InlineKeyboardButton(Message.get("back", user.language),
+                                         callback_data=item.category.parent.get_callback_data())] + controls
 
     keyboard = InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton('Предыдущий',
+                InlineKeyboardButton(Message.get("prev", user.language),
                                      callback_data=f'items,{item.category_id},prev,{item.pk}'),
-                InlineKeyboardButton('Следующий',
+                InlineKeyboardButton(Message.get("next", user.language),
                                      callback_data=f'items,{item.category_id},next,{item.pk}')
             ]
         ] + [controls])
@@ -277,6 +282,7 @@ def start(update: Update, context: CallbackContext, user: TelegramUser):
 def get_help(update: Update, context: CallbackContext, user: TelegramUser):
     update.message.reply_text(render(Message.get("help", user.language)),
                               parse_mode=ParseMode.HTML)
+    show_menu(update, context)
 
 
 @run_async
