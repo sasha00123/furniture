@@ -263,11 +263,14 @@ def unique_filename(folder, instance, filename):
 class Cover(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='covers', blank=True, null=True)
     info = models.ForeignKey(InfoButton, on_delete=models.CASCADE, related_name='covers', blank=True, null=True)
+
     file = models.ImageField(upload_to=partial(unique_filename, 'covers'), verbose_name='Обложка', max_length=255)
+    compress = models.BooleanField(default=True, verbose_name='Сжатие')
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.file:
             with Image.open(self.file) as img:
-                img.thumbnail((640, 640), Image.ANTIALIAS)
+                if self.compress:
+                    img.thumbnail((640, 640), Image.ANTIALIAS)
                 img.save(self.file.path)
