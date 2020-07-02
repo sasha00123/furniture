@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, List
 
 from django.conf import settings
 from django.template import Template, Context
@@ -23,13 +23,15 @@ LANGUAGE, FULL_NAME, PHONE = list(range(3))
 
 def inject_user(func):
     def injection_func(update: Update, context: CallbackContext, *args, **kwargs):
-        user, _ = TelegramUser.objects.update_or_create(chat_id=update.effective_chat.id,
-                                                        defaults={
-                                                            'full_name': update.effective_user.full_name,
-                                                            'username': update.effective_user.username
-                                                            if update.effective_user.username is not None else ''
-                                                        })
-        return func(update, context, *args, user=user, **kwargs)
+        kwargs['user'], context.user_data['created'] = TelegramUser.objects.update_or_create(
+            chat_id=update.effective_chat.id,
+            defaults={
+                'full_name': update.effective_user.full_name,
+                'username': update.effective_user.username
+                if update.effective_user.username is not None else ''
+            }
+        )
+        return func(update, context, *args, **kwargs)
 
     return injection_func
 
@@ -266,6 +268,13 @@ def ask_full_name(update: Update, context: CallbackContext, user: TelegramUser):
 
 @inject_user
 def start(update: Update, context: CallbackContext, user: TelegramUser):
+    if context.user_data.get('created', False) and context.args:
+        try:
+            user.referrer = TelegramUser.objects.get(pk=context.args[0])
+            user.save()
+        except TelegramUser.DoesNotExist:
+            pass
+
     if user.language is None:
         return ask_language(update, context)
     if not user.real_name:
@@ -292,7 +301,19 @@ def get_stats(update: Update, context: CallbackContext, user: TelegramUser):
     update.effective_message.reply_text(render(Message.get("stats", user.language), {
         'days': (now() - settings.LAUNCH_DATE).days,
         'total_users': TelegramUser.objects.count(),
-        'new_users_today': TelegramUser.objects.filter(joined__gte=timezone.now() - dt.timedelta(days=1)).count()
+        'new_users_today': TelegramUser.objects.filter(joined__gte=timezone.now() - dt.timedelta(days=1)).count(),
+        'total_invited': TelegramUser.objects.filter(referrer=user).count(),
+        'new_invited_today': TelegramUser.objects.filter(referrer=user,
+                                                         joined__gte=timezone.now() - dt.timedelta(days=1)).count(),
+    }))
+
+
+@run_async
+@is_admin
+@inject_user
+def get_invite_link(update: Update, context: CallbackContext, user: TelegramUser):
+    update.effective_message.reply_text(render(Message.get("invite_link", user.language), {
+        'link': f"https://t.me/{settings.BOT_USERNAME}?start={user.pk}"
     }))
 
 
@@ -420,6 +441,7 @@ def main():
     dp.add_handler(CommandHandler('help', get_help))
     dp.add_handler(MessageHandler(Filters.text([KeyboardEntryPoint("help_button")]), get_help))
     dp.add_handler(CommandHandler('stats', get_stats))
+    dp.add_handler(CommandHandler('invite', get_invite_link))
 
     dp.add_handler(CallbackQueryHandler(process_callback))
 

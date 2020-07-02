@@ -108,6 +108,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 WEBSITE_LINK = config('WEBSITE_LINK', default='http://localhost:8000')
 
+BOT_USERNAME = config('BOT_USERNAME')
+
 USE_WEBHOOK = config('USE_WEBHOOK', cast=bool)
 
 if USE_WEBHOOK:

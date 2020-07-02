@@ -246,6 +246,9 @@ class TelegramUser(models.Model):
                                  null=True)
     phone = models.CharField(max_length=63, verbose_name='Телефон', null=True)
 
+    referrer = models.ForeignKey("TelegramUser", on_delete=models.CASCADE, related_name="referrals",
+                                 verbose_name='Реферер', null=True)
+
     class Meta:
         verbose_name = 'Пользователь Telegram'
         verbose_name_plural = 'Пользователи Telegram'
