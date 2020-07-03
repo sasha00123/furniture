@@ -101,7 +101,7 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(TelegramUser)
 class TelegramUserAdmin(admin.ModelAdmin):
-    list_display = ['chat_id', 'full_name', 'real_name', 'username', 'phone']
+    list_display = ['chat_id', 'full_name', 'real_name', 'username', 'phone', 'referrer', 'is_admin', 'is_manager']
     search_fields = ['full_name', 'username']
 
 

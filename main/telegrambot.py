@@ -40,7 +40,20 @@ def is_admin(func):
     @inject_user
     def authorized_request(update: Update, context: CallbackContext, user: TelegramUser, *args, **kwargs):
         if not user.is_admin:
-            update.effective_message.reply_text(render(Message.get("admin_access_required", user.language)), parse_mode=ParseMode.HTML)
+            update.effective_message.reply_text(render(Message.get("admin_access_required", user.language)),
+                                                parse_mode=ParseMode.HTML)
+        else:
+            return func(update, context, *args, **kwargs)
+
+    return authorized_request
+
+
+def is_manager(func):
+    @inject_user
+    def authorized_request(update: Update, context: CallbackContext, user: TelegramUser, *args, **kwargs):
+        if not user.is_manager and not user.is_admin:
+            update.effective_message.reply_text(render(Message.get("admin_access_required", user.language)),
+                                                parse_mode=ParseMode.HTML)
         else:
             return func(update, context, *args, **kwargs)
 
@@ -263,7 +276,8 @@ def ask_phone(update: Update, context: CallbackContext, user: TelegramUser):
 
 @inject_user
 def ask_full_name(update: Update, context: CallbackContext, user: TelegramUser):
-    update.message.reply_text(render(Message.get("full_name", user.language)), reply_markup=ReplyKeyboardRemove(), parse_mode=ParseMode.HTML)
+    update.message.reply_text(render(Message.get("full_name", user.language)), reply_markup=ReplyKeyboardRemove(),
+                              parse_mode=ParseMode.HTML)
     return FULL_NAME
 
 
@@ -308,7 +322,7 @@ def get_stats(update: Update, context: CallbackContext, user: TelegramUser):
             'today': TelegramUser.objects.filter(referrer=tg_user,
                                                  joined__gte=timezone.now() - dt.timedelta(days=1)).count(),
             'total': TelegramUser.objects.filter(referrer=tg_user).count()
-        } for tg_user in TelegramUser.objects.filter(is_admin=True)]
+        } for tg_user in TelegramUser.objects.filter(is_manager=True)]
     }), parse_mode=ParseMode.HTML)
 
 

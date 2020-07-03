@@ -239,6 +239,7 @@ class TelegramUser(models.Model):
     real_name = models.CharField(max_length=255, verbose_name='Полное имя', default="")
     username = models.CharField(max_length=255, blank=True, verbose_name='Username')
     is_admin = models.BooleanField(default=False, verbose_name='Администратор')
+    is_manager = models.BooleanField(default=False, verbose_name='Менеджер')
     joined = models.DateTimeField(auto_now_add=True, verbose_name='Зарегистрирован')
 
     language = models.ForeignKey(MessageLanguage, on_delete=models.CASCADE,
