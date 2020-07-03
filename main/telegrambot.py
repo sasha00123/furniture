@@ -126,7 +126,7 @@ def show_menu(update: Update, context: CallbackContext, user: TelegramUser):
     keyboard = InlineKeyboardMarkup([chunk for chunk in chunks(buttons, 2)])
 
     update.effective_message.reply_text(render(Message.get("menu_begin", user.language)),
-                                        reply_markup=get_main_keyboard(update, context)
+                                        reply_markup=get_main_keyboard(update, context),
                                         parse_mode=ParseMode.HTML)
     update.effective_message.reply_text(render(Message.get('menu', user.language)),
                                         reply_markup=keyboard,
