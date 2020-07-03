@@ -40,7 +40,7 @@ def is_admin(func):
     @inject_user
     def authorized_request(update: Update, context: CallbackContext, user: TelegramUser, *args, **kwargs):
         if not user.is_admin:
-            update.effective_message.reply_text(render(Message.get("admin_access_required", user.language)))
+            update.effective_message.reply_text(render(Message.get("admin_access_required", user.language)), parse_mode=ParseMode.HTML)
         else:
             return func(update, context, *args, **kwargs)
 
@@ -126,7 +126,8 @@ def show_menu(update: Update, context: CallbackContext, user: TelegramUser):
     keyboard = InlineKeyboardMarkup([chunk for chunk in chunks(buttons, 2)])
 
     update.effective_message.reply_text(render(Message.get("menu_begin", user.language)),
-                                        reply_markup=get_main_keyboard(update, context))
+                                        reply_markup=get_main_keyboard(update, context)
+                                        parse_mode=ParseMode.HTML)
     update.effective_message.reply_text(render(Message.get('menu', user.language)),
                                         reply_markup=keyboard,
                                         parse_mode=ParseMode.HTML)
@@ -246,7 +247,7 @@ def ask_language(update: Update, context: Context, user: TelegramUser):
     buttons = [language.name for language in MessageLanguage.objects.all()]
     keyboard = ReplyKeyboardMarkup([chunk for chunk in chunks(buttons, 2)], resize_keyboard=True)
     update.message.reply_text(render(Message.get("language", MessageLanguage.objects.get(default=True))),
-                              reply_markup=keyboard)
+                              reply_markup=keyboard, parse_mode=ParseMode.HTML)
     return LANGUAGE
 
 
@@ -256,13 +257,13 @@ def ask_phone(update: Update, context: CallbackContext, user: TelegramUser):
     keyboard = ReplyKeyboardMarkup(
         [[KeyboardButton(render(Message.get("phone_button", user.language)), request_contact=True)]],
         resize_keyboard=True)
-    update.message.reply_text(Message.get("phone", user.language), reply_markup=keyboard)
+    update.message.reply_text(Message.get("phone", user.language), reply_markup=keyboard, parse_mode=ParseMode.HTML)
     return PHONE
 
 
 @inject_user
 def ask_full_name(update: Update, context: CallbackContext, user: TelegramUser):
-    update.message.reply_text(render(Message.get("full_name", user.language)), reply_markup=ReplyKeyboardRemove())
+    update.message.reply_text(render(Message.get("full_name", user.language)), reply_markup=ReplyKeyboardRemove(), parse_mode=ParseMode.HTML)
     return FULL_NAME
 
 
@@ -302,10 +303,12 @@ def get_stats(update: Update, context: CallbackContext, user: TelegramUser):
         'days': (now() - settings.LAUNCH_DATE).days,
         'total_users': TelegramUser.objects.count(),
         'new_users_today': TelegramUser.objects.filter(joined__gte=timezone.now() - dt.timedelta(days=1)).count(),
-        'total_invited': TelegramUser.objects.filter(referrer=user).count(),
-        'new_invited_today': TelegramUser.objects.filter(referrer=user,
-                                                         joined__gte=timezone.now() - dt.timedelta(days=1)).count(),
-    }))
+        'data': [{
+            'today': TelegramUser.objects.filter(referrer=tg_user,
+                                                 joined_gte=timezone.now() - dt.timedelta(days=1)).count(),
+            'total': TelegramUser.objects.filter(referrer=tg_user).count()
+        } for tg_user in TelegramUser.objects.filter(is_admin=True)]
+    }), parse_mode=ParseMode.HTML)
 
 
 @run_async
@@ -314,7 +317,7 @@ def get_stats(update: Update, context: CallbackContext, user: TelegramUser):
 def get_invite_link(update: Update, context: CallbackContext, user: TelegramUser):
     update.effective_message.reply_text(render(Message.get("invite_link", user.language), {
         'link': f"https://t.me/{settings.BOT_USERNAME}?start={user.pk}"
-    }))
+    }), parse_mode=ParseMode.HTML)
 
 
 @inject_user
@@ -322,7 +325,7 @@ def process_language(update: Update, context: CallbackContext, user: TelegramUse
     try:
         language = MessageLanguage.objects.get(name=update.message.text)
     except MessageLanguage.DoesNotExist:
-        update.message.reply_text(Message.get("wrong_language", user.language))
+        update.message.reply_text(Message.get("wrong_language", user.language), parse_mode=ParseMode.HTML)
         return False
 
     # Saving
@@ -376,7 +379,7 @@ def set_language(update: Update, context: CallbackContext):
 @inject_user
 def set_phone(update: Update, context: CallbackContext, user: TelegramUser):
     if update.message.contact.user_id != update.message.chat_id:
-        update.message.reply_text(render(Message.get("wrong_phone", user.language)))
+        update.message.reply_text(render(Message.get("wrong_phone", user.language)), parse_mode=ParseMode.HTML)
         return PHONE
 
     user.phone = update.message.contact.phone_number
