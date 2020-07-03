@@ -327,7 +327,7 @@ def get_stats(update: Update, context: CallbackContext, user: TelegramUser):
 
 
 @run_async
-@is_admin
+@is_manager
 @inject_user
 def get_invite_link(update: Update, context: CallbackContext, user: TelegramUser):
     update.effective_message.reply_text(render(Message.get("invite_link", user.language), {

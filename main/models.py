@@ -244,11 +244,11 @@ class TelegramUser(models.Model):
 
     language = models.ForeignKey(MessageLanguage, on_delete=models.CASCADE,
                                  related_name='users', verbose_name='Язык',
-                                 null=True)
-    phone = models.CharField(max_length=63, verbose_name='Телефон', null=True)
+                                 null=True, blank=True)
+    phone = models.CharField(max_length=63, verbose_name='Телефон', null=True, blank=True)
 
     referrer = models.ForeignKey("TelegramUser", on_delete=models.CASCADE, related_name="referrals",
-                                 verbose_name='Реферер', null=True)
+                                 verbose_name='Реферер', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Пользователь Telegram'
