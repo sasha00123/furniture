@@ -323,7 +323,9 @@ def get_stats(update: Update, context: CallbackContext, user: TelegramUser):
             'today': TelegramUser.objects.filter(referrer=tg_user,
                                                  joined__gte=timezone.now() - dt.timedelta(days=1)).count(),
             'total': TelegramUser.objects.filter(referrer=tg_user).count()
-        } for tg_user in TelegramUser.objects.annotate(total_referrals=Count('referrals')).order_by('-total_referrals')]
+        } for tg_user in TelegramUser.objects.filter(is_manager=True)
+                                               .annotate(total_referrals=Count('referrals'))
+                                               .order_by('-total_referrals')]
     }), parse_mode=ParseMode.HTML)
 
 
