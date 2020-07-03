@@ -235,8 +235,8 @@ class MessageValue(models.Model):
 
 class TelegramUser(models.Model):
     chat_id = models.BigIntegerField(db_index=True, verbose_name='ID чата', unique=True)
-    full_name = models.CharField(max_length=255, verbose_name='Имя Telegram')
-    real_name = models.CharField(max_length=255, verbose_name='Полное имя', default="")
+    full_name = models.CharField(max_length=255, verbose_name='Имя Telegram', blank=True, default="")
+    real_name = models.CharField(max_length=255, verbose_name='Полное имя', blank=True, default="")
     username = models.CharField(max_length=255, blank=True, verbose_name='Username')
     is_admin = models.BooleanField(default=False, verbose_name='Администратор')
     is_manager = models.BooleanField(default=False, verbose_name='Менеджер')
@@ -245,7 +245,7 @@ class TelegramUser(models.Model):
     language = models.ForeignKey(MessageLanguage, on_delete=models.CASCADE,
                                  related_name='users', verbose_name='Язык',
                                  null=True, blank=True)
-    phone = models.CharField(max_length=63, verbose_name='Телефон', null=True, blank=True)
+    phone = models.CharField(max_length=63, verbose_name='Телефон', default="", blank=True)
 
     referrer = models.ForeignKey("TelegramUser", on_delete=models.CASCADE, related_name="referrals",
                                  verbose_name='Реферер', null=True, blank=True)

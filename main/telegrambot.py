@@ -2,6 +2,7 @@ import logging
 from typing import Optional, List
 
 from django.conf import settings
+from django.db.models import Count
 from django.template import Template, Context
 from django.utils import timezone
 from django.utils.timezone import now
@@ -294,7 +295,7 @@ def start(update: Update, context: CallbackContext, user: TelegramUser):
         return ask_language(update, context)
     if not user.real_name:
         return ask_full_name(update, context)
-    if user.phone is None:
+    if not user.phone:
         return ask_phone(update, context)
 
     show_menu(update, context)
@@ -322,7 +323,7 @@ def get_stats(update: Update, context: CallbackContext, user: TelegramUser):
             'today': TelegramUser.objects.filter(referrer=tg_user,
                                                  joined__gte=timezone.now() - dt.timedelta(days=1)).count(),
             'total': TelegramUser.objects.filter(referrer=tg_user).count()
-        } for tg_user in TelegramUser.objects.filter(is_manager=True)]
+        } for tg_user in TelegramUser.objects.annotate(total_referrals=Count('referrals')).order_by('-total_referrals')]
     }), parse_mode=ParseMode.HTML)
 
 
