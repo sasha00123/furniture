@@ -304,6 +304,7 @@ def get_stats(update: Update, context: CallbackContext, user: TelegramUser):
         'total_users': TelegramUser.objects.count(),
         'new_users_today': TelegramUser.objects.filter(joined__gte=timezone.now() - dt.timedelta(days=1)).count(),
         'data': [{
+            'profile': tg_user,
             'today': TelegramUser.objects.filter(referrer=tg_user,
                                                  joined_gte=timezone.now() - dt.timedelta(days=1)).count(),
             'total': TelegramUser.objects.filter(referrer=tg_user).count()
