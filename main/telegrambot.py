@@ -307,7 +307,16 @@ def start(update: Update, context: CallbackContext, user: TelegramUser):
 def get_help(update: Update, context: CallbackContext, user: TelegramUser):
     update.message.reply_text(render(Message.get("help", user.language)),
                               parse_mode=ParseMode.HTML)
-    show_menu(update, context)
+
+
+@run_async
+@inject_user
+def get_personal_stats(update: Update, context: CallbackContext, user: TelegramUser):
+    update.message.reply_text(render(Message.get("personal_stats", user.language), {
+        'user': user,
+        'chat_id': update.message.from_user.id,
+        'days': (timezone.now() - user.joined).days
+    }), parse_mode=ParseMode.HTML)
 
 
 @run_async
@@ -463,6 +472,7 @@ def main():
     dp.add_handler(MessageHandler(Filters.text([KeyboardEntryPoint("help_button")]), get_help))
     dp.add_handler(CommandHandler('stats', get_stats))
     dp.add_handler(CommandHandler('invite', get_invite_link))
+    dp.add_handler(CommandHandler('mstats', get_personal_stats))
 
     dp.add_handler(CallbackQueryHandler(process_callback))
 
