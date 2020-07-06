@@ -83,6 +83,7 @@ def get_main_keyboard(update: Update, context: CallbackContext, user: TelegramUs
     return ReplyKeyboardMarkup([
         [Message.get("change_language_button", user.language), Message.get("main_menu_button", user.language)],
         [Message.get("change_full_name_button", user.language), Message.get("help_button", user.language)],
+        [Message.get("profile_menu_button", user.language)]
     ], one_time_keyboard=True, resize_keyboard=True)
 
 
@@ -470,9 +471,12 @@ def main():
 
     dp.add_handler(CommandHandler('help', get_help))
     dp.add_handler(MessageHandler(Filters.text([KeyboardEntryPoint("help_button")]), get_help))
+
     dp.add_handler(CommandHandler('stats', get_stats))
     dp.add_handler(CommandHandler('invite', get_invite_link))
+
     dp.add_handler(CommandHandler('mstats', get_personal_stats))
+    dp.add_handler(MessageHandler(Filters.text([KeyboardEntryPoint("profile_menu_button")]), get_personal_stats))
 
     dp.add_handler(CallbackQueryHandler(process_callback))
 
