@@ -296,7 +296,7 @@ def ask_phone(update: Update, context: CallbackContext, user: TelegramUser):
 @inject_user
 def ask_full_name(update: Update, context: CallbackContext, user: TelegramUser):
     markup = ReplyKeyboardRemove()
-    if user.full_name:
+    if user.real_name:
         markup = ReplyKeyboardMarkup([
             [Message.get("cancel_button", user.language)]
         ], resize_keyboard=True)
