@@ -285,7 +285,7 @@ def ask_phone(update: Update, context: CallbackContext, user: TelegramUser):
     markup = [
         [KeyboardButton(render(Message.get("phone_button", user.language)), request_contact=True)]
     ]
-    if user.phone is not None:
+    if user.phone:
         markup.append([Message.get("cancel_button", user.language)])
 
     keyboard = ReplyKeyboardMarkup(markup, resize_keyboard=True)
@@ -295,9 +295,13 @@ def ask_phone(update: Update, context: CallbackContext, user: TelegramUser):
 
 @inject_user
 def ask_full_name(update: Update, context: CallbackContext, user: TelegramUser):
-    update.message.reply_text(render(Message.get("full_name", user.language)), reply_markup=ReplyKeyboardMarkup([
-        [Message.get("cancel_button", user.language)]
-    ], resize_keyboard=True), parse_mode=ParseMode.HTML)
+    markup = ReplyKeyboardRemove()
+    if user.full_name:
+        markup = ReplyKeyboardMarkup([
+            [Message.get("cancel_button", user.language)]
+        ], resize_keyboard=True)
+    update.message.reply_text(render(Message.get("full_name", user.language)), parse_mode=ParseMode.HTML,
+                              reply_markup=markup)
     return FULL_NAME
 
 
@@ -469,7 +473,7 @@ def main():
         states={
             LANGUAGE: [MessageHandler(
                 Filters.text & ~Filters.command & ~Filters.text([KeyboardEntryPoint("cancel_button")]),
-                                                                update_language)],
+                update_language)],
         },
         fallbacks=[CommandHandler('cancel', show_menu),
                    MessageHandler(Filters.text([KeyboardEntryPoint("cancel_button")]), show_menu)],
@@ -484,7 +488,7 @@ def main():
         states={
             FULL_NAME: [MessageHandler(
                 Filters.text & ~Filters.command & ~Filters.text([KeyboardEntryPoint("cancel_button")]),
-                                                                update_full_name)],
+                update_full_name)],
         },
         fallbacks=[CommandHandler('cancel', show_menu),
                    MessageHandler(Filters.text([KeyboardEntryPoint("cancel_button")]), show_menu)],
