@@ -83,7 +83,7 @@ def get_lk_keyboard(update: Update, context: CallbackContext, user: TelegramUser
     return ReplyKeyboardMarkup([
         [Message.get("change_language_button", user.language), Message.get("change_full_name_button", user.language)],
         [Message.get("help_button", user.language), Message.get("main_menu_button", user.language)],
-    ])
+    ], resize_keyboard=True)
 
 
 @inject_user
