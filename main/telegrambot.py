@@ -79,12 +79,19 @@ class KeyboardEntryPoint:
 
 
 @inject_user
+def get_lk_keyboard(update: Update, context: CallbackContext, user: TelegramUser):
+    return ReplyKeyboardMarkup([
+        [Message.get("change_language_button", user.language), Message.get("change_full_name_button", user.language)],
+        [Message.get("help_button", user.language), Message.get("main_menu_button", user.language)],
+    ])
+
+
+@inject_user
 def get_main_keyboard(update: Update, context: CallbackContext, user: TelegramUser):
     return ReplyKeyboardMarkup([
-        [Message.get("change_language_button", user.language), Message.get("main_menu_button", user.language)],
-        [Message.get("change_full_name_button", user.language), Message.get("help_button", user.language)],
+        [Message.get("main_menu_button", user.language)],
         [Message.get("profile_menu_button", user.language)]
-    ], one_time_keyboard=True, resize_keyboard=True)
+    ], resize_keyboard=True)
 
 
 def show_covers(update: Update, context: CallbackContext, covers):
@@ -146,6 +153,8 @@ def show_menu(update: Update, context: CallbackContext, user: TelegramUser):
     update.effective_message.reply_text(render(Message.get('menu', user.language)),
                                         reply_markup=keyboard,
                                         parse_mode=ParseMode.HTML)
+
+    return ConversationHandler.END
 
 
 @inject_user
@@ -260,7 +269,11 @@ def process_callback(update: Update, context: CallbackContext):
 @inject_user
 def ask_language(update: Update, context: Context, user: TelegramUser):
     buttons = [language.name for language in MessageLanguage.objects.all()]
-    keyboard = ReplyKeyboardMarkup([chunk for chunk in chunks(buttons, 2)], resize_keyboard=True)
+    markup = [chunk for chunk in chunks(buttons, 2)]
+    if user.language is not None:
+        markup.append([Message.get("cancel_button", user.language)])
+
+    keyboard = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text(render(Message.get("language", MessageLanguage.objects.get(default=True))),
                               reply_markup=keyboard, parse_mode=ParseMode.HTML)
     return LANGUAGE
@@ -269,17 +282,22 @@ def ask_language(update: Update, context: Context, user: TelegramUser):
 @inject_user
 def ask_phone(update: Update, context: CallbackContext, user: TelegramUser):
     # Asking for phone
-    keyboard = ReplyKeyboardMarkup(
-        [[KeyboardButton(render(Message.get("phone_button", user.language)), request_contact=True)]],
-        resize_keyboard=True)
+    markup = [
+        [KeyboardButton(render(Message.get("phone_button", user.language)), request_contact=True)]
+    ]
+    if user.phone is not None:
+        markup.append([Message.get("cancel_button", user.language)])
+
+    keyboard = ReplyKeyboardMarkup(markup, resize_keyboard=True)
     update.message.reply_text(Message.get("phone", user.language), reply_markup=keyboard, parse_mode=ParseMode.HTML)
     return PHONE
 
 
 @inject_user
 def ask_full_name(update: Update, context: CallbackContext, user: TelegramUser):
-    update.message.reply_text(render(Message.get("full_name", user.language)), reply_markup=ReplyKeyboardRemove(),
-                              parse_mode=ParseMode.HTML)
+    update.message.reply_text(render(Message.get("full_name", user.language)), reply_markup=ReplyKeyboardMarkup([
+        [Message.get("cancel_button", user.language)]
+    ], resize_keyboard=True), parse_mode=ParseMode.HTML)
     return FULL_NAME
 
 
@@ -317,7 +335,7 @@ def get_personal_stats(update: Update, context: CallbackContext, user: TelegramU
         'user': user,
         'chat_id': update.message.from_user.id,
         'days': (timezone.now() - user.joined).days
-    }), parse_mode=ParseMode.HTML)
+    }), parse_mode=ParseMode.HTML, reply_markup=get_lk_keyboard(update, context))
 
 
 @run_async
@@ -449,9 +467,12 @@ def main():
         entry_points=[CommandHandler('lang', ask_language),
                       MessageHandler(Filters.text([KeyboardEntryPoint("change_language_button")]), ask_language)],
         states={
-            LANGUAGE: [MessageHandler(Filters.text & ~Filters.command, update_language)],
+            LANGUAGE: [MessageHandler(
+                Filters.text & ~Filters.command & ~Filters.text([KeyboardEntryPoint("cancel_button")]),
+                                                                update_language)],
         },
-        fallbacks=[CommandHandler('cancel', show_menu)],
+        fallbacks=[CommandHandler('cancel', show_menu),
+                   MessageHandler(Filters.text([KeyboardEntryPoint("cancel_button")]), show_menu)],
         name="UpdateLanguage",
         persistent=True,
         allow_reentry=True
@@ -461,9 +482,12 @@ def main():
         entry_points=[CommandHandler('fio', ask_full_name),
                       MessageHandler(Filters.text([KeyboardEntryPoint("change_full_name_button")]), ask_full_name)],
         states={
-            FULL_NAME: [MessageHandler(Filters.text & ~Filters.command, update_full_name)],
+            FULL_NAME: [MessageHandler(
+                Filters.text & ~Filters.command & ~Filters.text([KeyboardEntryPoint("cancel_button")]),
+                                                                update_full_name)],
         },
-        fallbacks=[CommandHandler('cancel', show_menu)],
+        fallbacks=[CommandHandler('cancel', show_menu),
+                   MessageHandler(Filters.text([KeyboardEntryPoint("cancel_button")]), show_menu)],
         name="UpdateFullName",
         persistent=True,
         allow_reentry=True
