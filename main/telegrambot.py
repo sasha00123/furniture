@@ -79,17 +79,10 @@ class KeyboardEntryPoint:
 
 
 @inject_user
-def get_lk_keyboard(update: Update, context: CallbackContext, user: TelegramUser):
-    return ReplyKeyboardMarkup([
-        [Message.get("change_language_button", user.language), Message.get("change_full_name_button", user.language)],
-        [Message.get("help_button", user.language), Message.get("main_menu_button", user.language)],
-    ], resize_keyboard=True)
-
-
-@inject_user
 def get_main_keyboard(update: Update, context: CallbackContext, user: TelegramUser):
     return ReplyKeyboardMarkup([
-        [Message.get("main_menu_button", user.language)],
+        [Message.get("change_language_button", user.language), Message.get("main_menu_button", user.language)],
+        [Message.get("change_full_name_button", user.language), Message.get("help_button", user.language)],
         [Message.get("profile_menu_button", user.language)]
     ], resize_keyboard=True)
 
@@ -339,7 +332,7 @@ def get_personal_stats(update: Update, context: CallbackContext, user: TelegramU
         'user': user,
         'chat_id': update.message.from_user.id,
         'days': (timezone.now() - user.joined).days
-    }), parse_mode=ParseMode.HTML, reply_markup=get_lk_keyboard(update, context))
+    }), parse_mode=ParseMode.HTML, reply_markup=get_main_keyboard(update, context))
 
 
 @run_async
